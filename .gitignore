@@ -1,0 +1,4 @@
+/target
+/win-gen
+Cargo.lock
+wingen.ps1

@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+mod os;
+
 #[cfg(not(test))]
 mod panic_impl {
     use core::panic::PanicInfo;

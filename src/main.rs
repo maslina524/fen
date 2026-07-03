@@ -3,6 +3,11 @@
 
 mod os;
 
+extern crate alloc;
+
+#[global_allocator]
+static ALLOCATOR: os::noalloc::WinAllocator = os::noalloc::WinAllocator;
+
 #[cfg(not(test))]
 mod panic_impl {
     use core::panic::PanicInfo;

@@ -40,3 +40,15 @@ impl Display for ErrorCode {
         write!(f, "{string}")
     }
 }
+
+#[macro_export]
+macro_rules! display_for_err {
+    ($name:tt) => {
+        impl core::fmt::Display for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                let error = $crate::os::error::ErrorCode::new(*self as u32);
+                write!(f, "{}", error.to_string())
+            }
+        }
+    };
+}

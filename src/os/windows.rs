@@ -18,8 +18,10 @@ macro_rules! link {
     )
 }
 
+link!("kernel32" "system" fn CloseHandle(hobject : HANDLE) -> BOOL);
 link!("shell32" "system" fn CommandLineToArgvW(lpcmdline : PCWSTR, pnumargs : *mut i32) -> *mut PWSTR);
 link!("kernel32" "system" fn CreateDirectoryW(lppathname : PCWSTR, lpsecurityattributes : *const SECURITY_ATTRIBUTES) -> BOOL);
+link!("kernel32" "system" fn CreateFileW(lpfilename : PCWSTR, dwdesiredaccess : u32, dwsharemode : FILE_SHARE_MODE, lpsecurityattributes : *const SECURITY_ATTRIBUTES, dwcreationdisposition : FILE_CREATION_DISPOSITION, dwflagsandattributes : FILE_FLAGS_AND_ATTRIBUTES, htemplatefile : HANDLE) -> HANDLE);
 link!("kernel32" "system" fn ExitProcess(uexitcode : u32) -> !);
 link!("kernel32" "system" fn FormatMessageW(dwflags : FORMAT_MESSAGE_OPTIONS, lpsource : *const core::ffi::c_void, dwmessageid : u32, dwlanguageid : u32, lpbuffer : PWSTR, nsize : u32, arguments : *const *const i8) -> u32);
 link!("kernel32" "system" fn GetCommandLineW() -> PCWSTR);
@@ -33,7 +35,9 @@ link!("kernel32" "system" fn SetConsoleOutputCP(wcodepageid : u32) -> BOOL);
 link!("kernel32" "system" fn SetFileAttributesW(lpfilename : PCWSTR, dwfileattributes : FILE_FLAGS_AND_ATTRIBUTES) -> BOOL);
 link!("kernel32" "system" fn WriteFile(hfile : HANDLE, lpbuffer : *const u8, nnumberofbytestowrite : u32, lpnumberofbyteswritten : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 pub type BOOL = i32;
+pub type FILE_CREATION_DISPOSITION = u32;
 pub type FILE_FLAGS_AND_ATTRIBUTES = u32;
+pub type FILE_SHARE_MODE = u32;
 pub type FORMAT_MESSAGE_OPTIONS = u32;
 pub type HANDLE = *mut core::ffi::c_void;
 pub type HEAP_FLAGS = u32;

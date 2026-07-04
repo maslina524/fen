@@ -15,6 +15,10 @@ impl ErrorCode {
         let code = unsafe { GetLastError() };
         Self::new(code)
     }
+
+    pub fn code(&self) -> u32 {
+        self.0
+    }
 }
 
 impl Display for ErrorCode {

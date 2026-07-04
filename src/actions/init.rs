@@ -1,6 +1,3 @@
-use alloc::format;
-use alloc::string::ToString;
-
 use crate::NoResult;
 use crate::os::error::ErrorType;
 use crate::os::fs;
@@ -13,17 +10,26 @@ pub fn init() -> NoResult {
         };
     }
 
+    // Create Dirs
+    fs::create_dir("ref", false)?;              // refs
+    fs::create_dir("ref/heads", false)?;        // refs/heads
+    fs::create_dir("ref/tags", false)?;         // refs/tags
+    fs::create_dir("objects", false)?;          // objects
+    fs::create_dir("objects/info", false)?;     // objects/info
+    fs::create_dir("objects/pack", false)?;     // objects/pack
+    fs::create_dir("hooks", false)?;            // hooks
+    fs::create_dir("info", false)?;             // info
+
+    // info/exclude
+    fs::create_file(".git/info/exclude", b"", 0)?;
+
     // HEAD
     let content = b"ref: refs/heads/master\n";
-    if let Err(e) = fs::create_file(".git/HEAD", content, content.len()) {
-        return Err(format!("{}", e.to_string()).into());
-    };
+    fs::create_file(".git/HEAD", content, content.len())?;
 
     // description
     let content = b"Unnamed repository; edit this file 'description' to name the repository.\n";
-    if let Err(e) = fs::create_file(".git/description", content, content.len()) {
-        return Err(format!("{}", e.to_string()).into());
-    };
+    fs::create_file(".git/description", content, content.len())?;
 
     Ok(())
 }

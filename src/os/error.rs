@@ -64,3 +64,5 @@ impl Display for ErrorCode {
         write!(f, "{string}")
     }
 }
+
+impl core::error::Error for ErrorCode {}

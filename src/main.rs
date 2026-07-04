@@ -1,7 +1,9 @@
 #![no_std]
 #![no_main]
 
-use crate::os::io;
+use alloc::{boxed::Box, format};
+
+use crate::os::{io, windows::ExitProcess};
 
 mod os;
 
@@ -30,12 +32,24 @@ mod panic_impl {
     }
 }
 
-fn div(a: i32, b: i32) -> i32 {
-    a / b
-}
-
 #[unsafe(no_mangle)]
 extern "C" fn main() -> i32 {
     io::set_console_to_utf8();
-    div(10, 0)
+    
+    let argv = os::env::args();
+    let action = match argv.get(1) {
+        Some(arg) => arg,
+        None => unsafe { ExitProcess(1) }
+    };
+    
+    let result: Result<(), Box<dyn core::error::Error>> = match action {
+        _ => Err(format!("unknown command `{action}`").into())
+    };
+
+    if let Err(err) = result {
+        eprintln!("Fen: {err}");
+        return 1;
+    }
+
+    return 0;
 }

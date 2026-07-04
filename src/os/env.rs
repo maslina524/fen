@@ -32,3 +32,13 @@ pub fn args() -> Vec<String> {
 
     ret_argv
 }
+
+pub fn current_exe() -> String {
+    let mut buf = [0u16; 1024];
+    let len = unsafe { GetModuleFileNameW(core::ptr::null_mut(), &mut buf as *mut u16, 1024) };
+
+    let slice = unsafe { core::slice::from_raw_parts(&buf as *const u16, len as usize) };
+    let string = String::from_utf16_lossy(slice);
+
+    string
+}

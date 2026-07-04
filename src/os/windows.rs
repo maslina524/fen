@@ -19,6 +19,7 @@ macro_rules! link {
 }
 
 link!("shell32" "system" fn CommandLineToArgvW(lpcmdline : PCWSTR, pnumargs : *mut i32) -> *mut PWSTR);
+link!("kernel32" "system" fn ExitProcess(uexitcode : u32) -> !);
 link!("kernel32" "system" fn GetCommandLineW() -> PCWSTR);
 link!("kernel32" "system" fn GetProcessHeap() -> HANDLE);
 link!("kernel32" "system" fn GetStdHandle(nstdhandle : STD_HANDLE) -> HANDLE);

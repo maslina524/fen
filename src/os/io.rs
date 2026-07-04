@@ -99,3 +99,22 @@ macro_rules! println {
         $crate::os::io::get_io().print("\n");
     }
 }
+
+#[macro_export]
+macro_rules! eprint {
+    () => {};
+    ($($tt:tt)*) => {
+        $crate::os::io::get_io().eprint(&alloc::format!($($tt)*));
+    }
+}
+
+#[macro_export]
+macro_rules! eprintln {
+    () => {
+        $crate::io::get_io().eprint("\n");
+    };
+    ($($tt:tt)*) => {
+        $crate::os::io::get_io().eprint(&alloc::format!($($tt)*));
+        $crate::os::io::get_io().eprint("\n");
+    }
+}

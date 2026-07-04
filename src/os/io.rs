@@ -9,6 +9,7 @@ use crate::os::windows::*;
 pub const CP_UTF8: u32 = 65001;
 pub const INVALID_HANDLE_VALUE: *mut c_void = -1 as isize as *mut c_void;
 pub const STDOUT_HANDLE: u32 = 0xFFFFFFF5;
+pub const STDERR_HANDLE: u32 = 0xFFFFFFF4;
 
 static IO_PTR: AtomicPtr<Io> = AtomicPtr::new(core::ptr::null_mut());
 
@@ -38,28 +39,30 @@ pub fn set_console_to_utf8() {
 }
 
 pub struct Io {
-    pub stdout: HANDLE
+    pub stdout: HANDLE,
+    pub stderr: HANDLE
 }
 
 impl Io {
-    pub fn from(stdout: HANDLE) -> Self {
-        
-        Self { stdout }
+    pub fn from(stdout: HANDLE, stderr: HANDLE) -> Self {
+        Self { stdout, stderr }
     }
 
     pub fn new() -> Self {
         let stdout = unsafe { GetStdHandle(STDOUT_HANDLE) };
-        if stdout == INVALID_HANDLE_VALUE { panic!("No console"); }
+        if stdout == INVALID_HANDLE_VALUE { panic!("No console for stdout"); }
+        let stderr = unsafe { GetStdHandle(STDERR_HANDLE) };
+        if stderr == INVALID_HANDLE_VALUE { panic!("No console for stderr"); }
         
-        Self::from(stdout)
+        Self::from(stdout, stderr)
     }
 
-    pub fn print(&self, string: &str) -> u32 {
+    pub fn raw_print(&self, handle: HANDLE, string: &str) -> u32 {
         let in_buf = &Vec::from(string)[..];
         let mut written = 0;
 
         unsafe { WriteFile(
-            self.stdout, 
+            handle, 
             in_buf.as_ptr() as *const u8, 
             in_buf.len() as u32, 
             &mut written, 
@@ -67,6 +70,14 @@ impl Io {
         ) };
 
         written
+    }
+
+    pub fn print(&self, string: &str) -> u32 {
+        self.raw_print(self.stdout, string)
+    }
+
+    pub fn eprint(&self, string: &str) -> u32 {
+        self.raw_print(self.stderr, string)
     }
 }
 

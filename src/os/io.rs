@@ -33,15 +33,15 @@ pub fn get_io() -> &'static Io {
     unsafe { &*ptr }
 }
 
+pub fn set_console_to_utf8() {
+    unsafe { SetConsoleOutputCP(CP_UTF8) };
+}
+
 pub struct Io {
     pub stdout: HANDLE
 }
 
 impl Io {
-    pub fn set_console_to_utf8() {
-        unsafe { SetConsoleOutputCP(CP_UTF8) };
-    }
-
     pub fn from(stdout: HANDLE) -> Self {
         
         Self { stdout }
@@ -67,5 +67,24 @@ impl Io {
         ) };
 
         written
+    }
+}
+
+#[macro_export]
+macro_rules! print {
+    () => {};
+    ($($tt:tt)*) => {
+        $crate::os::io::get_io().print(&alloc::format!($($tt)*));
+    }
+}
+
+#[macro_export]
+macro_rules! println {
+    () => {
+        $crate::io::get_io().print("\n");
+    };
+    ($($tt:tt)*) => {
+        $crate::os::io::get_io().print(&alloc::format!($($tt)*));
+        $crate::os::io::get_io().print("\n");
     }
 }

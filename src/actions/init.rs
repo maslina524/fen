@@ -1,24 +1,28 @@
 use crate::NoResult;
 use crate::os::error::ErrorType;
-use crate::os::fs;
+use crate::os::fs::{self, *};
 
 pub fn init() -> NoResult {
-    if let Err(e) = fs::create_dir(".git", true) {
+    if let Err(e) = fs::create_dir(".git") {
         return match e.typ() {
             ErrorType::DirAlreadyExists => Err("git already initialized in this directory".into()),
             _ => Err("an unexpected error occurred while creating the git directory".into())
         };
     }
+    fs::set_file_attribute(
+        ".git", 
+        FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_READONLY
+    );
 
     // Create Dirs
-    fs::create_dir("ref", false)?;              // refs
-    fs::create_dir("ref/heads", false)?;        // refs/heads
-    fs::create_dir("ref/tags", false)?;         // refs/tags
-    fs::create_dir("objects", false)?;          // objects
-    fs::create_dir("objects/info", false)?;     // objects/info
-    fs::create_dir("objects/pack", false)?;     // objects/pack
-    fs::create_dir("hooks", false)?;            // hooks
-    fs::create_dir("info", false)?;             // info
+    fs::create_dir("ref")?;              // refs
+    fs::create_dir("ref/heads")?;        // refs/heads
+    fs::create_dir("ref/tags")?;         // refs/tags
+    fs::create_dir("objects")?;          // objects
+    fs::create_dir("objects/info")?;     // objects/info
+    fs::create_dir("objects/pack")?;     // objects/pack
+    fs::create_dir("hooks")?;            // hooks
+    fs::create_dir("info")?;             // info
 
     // info/exclude
     fs::create_file(".git/info/exclude", b"", 0)?;

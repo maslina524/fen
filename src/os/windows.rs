@@ -10,7 +10,7 @@
 
 macro_rules! link {
     ($library:literal $abi:literal $($link_name:literal)? $(#[$doc:meta])? fn $($function:tt)*) => (
-        #[link(name = "kernel32")]
+        #[link(name = $library)]
         unsafe extern $abi {
             $(#[link_name=$link_name])?
             pub fn $($function)*;
@@ -18,12 +18,14 @@ macro_rules! link {
     )
 }
 
-link!("kernel32.dll" "system" fn GetProcessHeap() -> HANDLE);
-link!("kernel32.dll" "system" fn GetStdHandle(nstdhandle : STD_HANDLE) -> HANDLE);
-link!("kernel32.dll" "system" fn HeapAlloc(hheap : HANDLE, dwflags : HEAP_FLAGS, dwbytes : usize) -> *mut core::ffi::c_void);
-link!("kernel32.dll" "system" fn HeapFree(hheap : HANDLE, dwflags : HEAP_FLAGS, lpmem : *const core::ffi::c_void) -> BOOL);
-link!("kernel32.dll" "system" fn SetConsoleOutputCP(wcodepageid : u32) -> BOOL);
-link!("kernel32.dll" "system" fn WriteFile(hfile : HANDLE, lpbuffer : *const u8, nnumberofbytestowrite : u32, lpnumberofbyteswritten : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
+link!("shell32" "system" fn CommandLineToArgvW(lpcmdline : PCWSTR, pnumargs : *mut i32) -> *mut PWSTR);
+link!("kernel32" "system" fn GetCommandLineW() -> PCWSTR);
+link!("kernel32" "system" fn GetProcessHeap() -> HANDLE);
+link!("kernel32" "system" fn GetStdHandle(nstdhandle : STD_HANDLE) -> HANDLE);
+link!("kernel32" "system" fn HeapAlloc(hheap : HANDLE, dwflags : HEAP_FLAGS, dwbytes : usize) -> *mut core::ffi::c_void);
+link!("kernel32" "system" fn HeapFree(hheap : HANDLE, dwflags : HEAP_FLAGS, lpmem : *const core::ffi::c_void) -> BOOL);
+link!("kernel32" "system" fn SetConsoleOutputCP(wcodepageid : u32) -> BOOL);
+link!("kernel32" "system" fn WriteFile(hfile : HANDLE, lpbuffer : *const u8, nnumberofbytestowrite : u32, lpnumberofbyteswritten : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 pub type BOOL = i32;
 pub type HANDLE = *mut core::ffi::c_void;
 pub type HEAP_FLAGS = u32;
@@ -57,4 +59,6 @@ pub struct OVERLAPPED_0_0 {
     pub Offset: u32,
     pub OffsetHigh: u32,
 }
+pub type PCWSTR = *const u16;
+pub type PWSTR = *mut u16;
 pub type STD_HANDLE = u32;

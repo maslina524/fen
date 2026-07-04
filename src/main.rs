@@ -8,6 +8,7 @@ use alloc::{boxed::Box, format};
 use crate::os::{io, windows::ExitProcess};
 
 mod os;
+mod actions;
 
 extern crate alloc;
 
@@ -59,6 +60,7 @@ extern "C" fn main() -> i32 {
     let result: NoResult = match action.as_str() {
         "version" | "--version" => version(),
         "--exec-path" => exec_path(),
+        "init" => actions::init(),
         _ => Err(format!("unknown command `{action}`").into())
     };
 

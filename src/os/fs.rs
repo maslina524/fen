@@ -1,46 +1,22 @@
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use alloc::string::String;
 
-use crate::display_for_err;
+use crate::wide;
 use crate::os::windows::*;
-use crate::os::error::ErrorCode;
-
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum FsError {
-    FileNotFound = 2,
-    PathNotFound = 3,
-    AccessDenied = 5,
-    SharingViolation = 32,
-    InvalidParameter = 87,
-    DirAlreadyExists = 183
-}
-
-impl From<u32> for FsError {
-    fn from(value: u32) -> Self {
-        match value {
-            2   => Self::FileNotFound,
-            3   => Self::PathNotFound,
-            5   => Self::AccessDenied,
-            32  => Self::SharingViolation,
-            87  => Self::InvalidParameter,
-            183 => Self::DirAlreadyExists,
-            _ => unreachable!("unknown fs error")
-        }
-    }
-}
-
-display_for_err!(FsError);
-
-pub type FsResult<T> = Result<T, FsError>;
-
+use crate::os::error::{self, ErrorCode};
 
 const FILE_ATTRIBUTE_READONLY: u32 = 1;
 const FILE_ATTRIBUTE_HIDDEN: u32 = 2;
 
-pub fn create_dir(path: impl Into<String>, hidden: bool) -> FsResult<()> {
+const GENERIC_WRITE: u32 = 0x40000000;
+
+const FILE_SHARE_READ: u32 = 0x00000001;
+const FILE_SHARE_WRITE: u32 = 0x00000002;
+
+const CREATE_ALWAYS: u32 = 2;
+
+pub fn create_dir(path: impl Into<String>, hidden: bool) -> error::Result<()> {
     let path_str = path.into();
-    let wide: Vec<u16> = path_str.encode_utf16().chain(Some(0)).collect();
+    let wide: &[u16] = wide!(path_str);
 
     let result = unsafe { CreateDirectoryW(
         wide.as_ptr(), 
@@ -49,7 +25,7 @@ pub fn create_dir(path: impl Into<String>, hidden: bool) -> FsResult<()> {
 
     if result == 0 {
         let error = ErrorCode::last();
-        return Err(FsError::from(error.code()));
+        return Err(error);
     }
 
     if hidden {
@@ -60,7 +36,7 @@ pub fn create_dir(path: impl Into<String>, hidden: bool) -> FsResult<()> {
 
         if result == 0 {
             let error = ErrorCode::last();
-            return Err(FsError::from(error.code()));
+            return Err(error);
         }
     }
 

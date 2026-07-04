@@ -4,6 +4,18 @@ use alloc::string::String;
 
 use crate::os::windows::{FormatMessageW, GetLastError};
 
+pub type Result<T> = core::result::Result<T, ErrorCode>;
+
+pub enum ErrorType {
+    FileNotFound,
+    PathNotFound,
+    AccessDenied,
+    SharingViolation,
+    InvalidParameter,
+    DirAlreadyExists
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ErrorCode(u32);
 
 impl ErrorCode {
@@ -18,6 +30,18 @@ impl ErrorCode {
 
     pub fn code(&self) -> u32 {
         self.0
+    }
+
+    pub fn typ(&self) -> ErrorType {
+        match self.0 {
+            2   => ErrorType::FileNotFound,
+            3   => ErrorType::PathNotFound,
+            5   => ErrorType::AccessDenied,
+            32  => ErrorType::SharingViolation,
+            87  => ErrorType::InvalidParameter,
+            183 => ErrorType::DirAlreadyExists,
+            _ => unreachable!("unknown error")
+        }
     }
 }
 
@@ -39,16 +63,4 @@ impl Display for ErrorCode {
 
         write!(f, "{string}")
     }
-}
-
-#[macro_export]
-macro_rules! display_for_err {
-    ($name:tt) => {
-        impl core::fmt::Display for $name {
-            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                let error = $crate::os::error::ErrorCode::new(*self as u32);
-                write!(f, "{}", error.to_string())
-            }
-        }
-    };
 }

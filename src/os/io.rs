@@ -6,10 +6,10 @@ use alloc::boxed::Box;
 
 use crate::os::windows::*;
 
-pub const CP_UTF8: u32 = 65001;
-pub const INVALID_HANDLE_VALUE: *mut c_void = -1 as isize as *mut c_void;
-pub const STDOUT_HANDLE: u32 = 0xFFFFFFF5;
-pub const STDERR_HANDLE: u32 = 0xFFFFFFF4;
+const CP_UTF8: u32 = 65001;
+const INVALID_HANDLE_VALUE: *mut c_void = -1 as isize as *mut c_void;
+const STDOUT_HANDLE: u32 = 0xFFFFFFF5;
+const STDERR_HANDLE: u32 = 0xFFFFFFF4;
 
 static IO_PTR: AtomicPtr<Io> = AtomicPtr::new(core::ptr::null_mut());
 

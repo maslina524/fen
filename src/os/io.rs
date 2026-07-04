@@ -1,7 +1,6 @@
 use core::ffi::c_void;
 use core::sync::atomic::{AtomicPtr, Ordering};
 
-use alloc::vec::Vec;
 use alloc::boxed::Box;
 
 use crate::os::windows::*;
@@ -58,7 +57,7 @@ impl Io {
     }
 
     pub fn raw_print(&self, handle: HANDLE, string: &str) -> u32 {
-        let in_buf = &Vec::from(string)[..];
+        let in_buf = string.as_bytes();
         let mut written = 0;
 
         unsafe { WriteFile(

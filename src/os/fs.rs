@@ -1,7 +1,5 @@
 use core::ffi::c_void;
 
-use alloc::string::String;
-
 use crate::wide;
 use crate::os::windows::*;
 use crate::os::error::{self, ErrorCode};
@@ -18,9 +16,8 @@ const CREATE_ALWAYS: u32 = 2;
 pub const FILE_ATTRIBUTE_READONLY: u32 = 1;
 pub const FILE_ATTRIBUTE_HIDDEN: u32 = 2;
 
-pub fn create_dir(path: impl Into<String>) -> error::Result<()> {
-    let path_str = path.into();
-    let wide: &[u16] = wide!(path_str);
+pub fn create_dir(path: &str) -> error::Result<()> {
+    let wide: &[u16] = wide!(path);
 
     let result = unsafe { CreateDirectoryW(
         wide.as_ptr(), 
@@ -35,9 +32,8 @@ pub fn create_dir(path: impl Into<String>) -> error::Result<()> {
     Ok(())
 }
 
-pub fn set_file_attribute(path: impl Into<String>, attributes: u32) -> error::Result<()> {
-    let path_str = path.into();
-    let wide: &[u16] = wide!(path_str);
+pub fn set_file_attribute(path: &str, attributes: u32) -> error::Result<()> {
+    let wide: &[u16] = wide!(path);
 
     let result = unsafe { SetFileAttributesW(
         wide.as_ptr(), 
@@ -52,9 +48,8 @@ pub fn set_file_attribute(path: impl Into<String>, attributes: u32) -> error::Re
     Ok(())
 }
 
-pub fn create_file(path: impl Into<String>, content: &[u8], len: usize) -> error::Result<()> {
-    let path_str = path.into();
-    let path_wide: &[u16] = wide!(path_str);
+pub fn create_file(path: &str, content: &[u8], len: usize) -> error::Result<()> {
+    let path_wide: &[u16] = wide!(path);
 
     let handle = unsafe { CreateFileW(
         path_wide.as_ptr(), 

@@ -5,7 +5,7 @@ pub type NoResult = Result<(), Box<dyn core::error::Error>>;
 
 use alloc::{boxed::Box, format};
 
-use crate::os::{io, windows::ExitProcess};
+use crate::os::io;
 
 mod os;
 mod actions;
@@ -54,7 +54,7 @@ extern "C" fn main() -> i32 {
     let argv = os::env::args();
     let action = match argv.get(1) {
         Some(arg) => arg,
-        None => unsafe { ExitProcess(1) }
+        None => return 1
     };
 
     let result: NoResult = match action.as_str() {

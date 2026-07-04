@@ -9,10 +9,11 @@ pub fn init() -> NoResult {
             _ => Err("an unexpected error occurred while creating the git directory".into())
         };
     }
+    
     fs::set_file_attribute(
         ".git", 
         FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_READONLY
-    );
+    )?;
 
     // Create Dirs
     fs::create_dir("ref")?;              // refs

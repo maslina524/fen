@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+pub type NoResult = Result<(), Box<dyn core::error::Error>>;
+
 use alloc::{boxed::Box, format};
 
 use crate::os::{io, windows::ExitProcess};
@@ -32,6 +34,18 @@ mod panic_impl {
     }
 }
 
+fn version() -> NoResult {
+    let version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
+    println!("Fen v{version}");
+    Ok(())
+}
+
+fn exec_path() -> NoResult {
+    let path = os::env::current_exe();
+    println!("{path}");
+    Ok(())
+}
+
 #[unsafe(no_mangle)]
 extern "C" fn main() -> i32 {
     io::set_console_to_utf8();
@@ -41,8 +55,10 @@ extern "C" fn main() -> i32 {
         Some(arg) => arg,
         None => unsafe { ExitProcess(1) }
     };
-    
-    let result: Result<(), Box<dyn core::error::Error>> = match action {
+
+    let result: NoResult = match action.as_str() {
+        "version" | "--version" => version(),
+        "--exec-path" => exec_path(),
         _ => Err(format!("unknown command `{action}`").into())
     };
 

@@ -1,4 +1,5 @@
 /target
 /win-gen
+/test
 Cargo.lock
 wingen.ps1

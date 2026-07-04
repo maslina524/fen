@@ -8,9 +8,6 @@ use crate::os::error::{self, ErrorCode};
 
 const INVALID_HANDLE_VALUE: *mut c_void = -1 as isize as *mut c_void;
 
-const FILE_ATTRIBUTE_READONLY: u32 = 1;
-const FILE_ATTRIBUTE_HIDDEN: u32 = 2;
-
 const GENERIC_WRITE: u32 = 0x40000000;
 
 const FILE_SHARE_READ: u32 = 0x00000001;
@@ -18,7 +15,10 @@ const FILE_SHARE_WRITE: u32 = 0x00000002;
 
 const CREATE_ALWAYS: u32 = 2;
 
-pub fn create_dir(path: impl Into<String>, hidden: bool) -> error::Result<()> {
+pub const FILE_ATTRIBUTE_READONLY: u32 = 1;
+pub const FILE_ATTRIBUTE_HIDDEN: u32 = 2;
+
+pub fn create_dir(path: impl Into<String>) -> error::Result<()> {
     let path_str = path.into();
     let wide: &[u16] = wide!(path_str);
 
@@ -32,16 +32,21 @@ pub fn create_dir(path: impl Into<String>, hidden: bool) -> error::Result<()> {
         return Err(error);
     }
 
-    if hidden {
-        let result = unsafe { SetFileAttributesW(
-            wide.as_ptr(), 
-            FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_READONLY
-        ) };
+    Ok(())
+}
 
-        if result == 0 {
-            let error = ErrorCode::last();
-            return Err(error);
-        }
+pub fn set_file_attribute(path: impl Into<String>, attributes: u32) -> error::Result<()> {
+    let path_str = path.into();
+    let wide: &[u16] = wide!(path_str);
+
+    let result = unsafe { SetFileAttributesW(
+        wide.as_ptr(), 
+        attributes
+    ) };
+
+    if result == 0 {
+        let error = ErrorCode::last();
+        return Err(error);
     }
 
     Ok(())

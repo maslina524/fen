@@ -1,6 +1,7 @@
-use crate::NoResult;
+use crate::{NoResult, toml};
 use crate::os::error::ErrorType;
 use crate::os::fs::{self, *};
+use crate::alloc::string::ToString;
 
 pub fn init() -> NoResult {
     if let Err(e) = fs::create_dir(".git") {
@@ -16,14 +17,14 @@ pub fn init() -> NoResult {
     )?;
 
     // Create Dirs
-    fs::create_dir("ref")?;              // refs
-    fs::create_dir("ref/heads")?;        // refs/heads
-    fs::create_dir("ref/tags")?;         // refs/tags
-    fs::create_dir("objects")?;          // objects
-    fs::create_dir("objects/info")?;     // objects/info
-    fs::create_dir("objects/pack")?;     // objects/pack
-    fs::create_dir("hooks")?;            // hooks
-    fs::create_dir("info")?;             // info
+    fs::create_dir(".git/ref")?;              // refs
+    fs::create_dir(".git/ref/heads")?;        // refs/heads
+    fs::create_dir(".git/ref/tags")?;         // refs/tags
+    fs::create_dir(".git/objects")?;          // objects
+    fs::create_dir(".git/objects/info")?;     // objects/info
+    fs::create_dir(".git/objects/pack")?;     // objects/pack
+    fs::create_dir(".git/hooks")?;            // hooks
+    fs::create_dir(".git/info")?;             // info
 
     // info/exclude
     fs::create_file(".git/info/exclude", b"", 0)?;
@@ -35,6 +36,20 @@ pub fn init() -> NoResult {
     // description
     let content = b"Unnamed repository; edit this file 'description' to name the repository.\n";
     fs::create_file(".git/description", content, content.len())?;
+
+    // config
+    let map = toml!(
+        "core" => {
+            "bare" => "false",
+            "repositoryformatversion" => "0",
+            "filemode" => "false",
+            "symlinks" => "false",
+            "ignorecase" => "true",
+            "logallrefupdates" => "true"
+        }
+    ).to_string();
+    let content = map.as_bytes();
+    fs::create_file(".git/config", content, content.len())?;
 
     Ok(())
 }

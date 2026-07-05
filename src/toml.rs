@@ -36,9 +36,10 @@ impl core::fmt::Display for TomlValue {
 pub type Name = String;
 pub type Category<K, V> = BTreeMap<K, V>;
 pub type Value<K, V> = BTreeMap<K, V>;
+pub type TomlType = Category<Name, Value<Name, TomlValue>>;
 
 pub struct Toml {
-    pub map: Category<Name, Value<Name, TomlValue>>
+    pub map: TomlType
 }
 
 impl Toml {
@@ -46,7 +47,11 @@ impl Toml {
         Self { map: Category::new() }
     }
 
-    pub fn from(string: &str) -> Option<Self> {
+    pub fn from_map(map: TomlType) -> Self {
+        Self { map }
+    }
+
+    pub fn from_str(string: &str) -> Option<Self> {
         let mut map = Category::new();
 
         let mut curr_name = String::new();

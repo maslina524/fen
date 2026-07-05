@@ -1,5 +1,10 @@
 use core::ffi::c_void;
 
+use alloc::borrow::ToOwned;
+use alloc::string::String;
+use alloc::vec::Vec;
+use alloc::vec;
+
 use crate::wide;
 use crate::os::windows::*;
 use crate::os::error::{self, ErrorCode};
@@ -18,6 +23,44 @@ const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x00000010;
 
 pub const FILE_ATTRIBUTE_READONLY: u32 = 1;
 pub const FILE_ATTRIBUTE_HIDDEN: u32 = 2;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Path {
+    parts: Vec<String>
+}
+
+impl Path {
+    pub fn from_str(path: &str) -> Self {
+        let wide_path: &[u16] = wide!(path);
+        let max_path: usize = if path.starts_with(r"\\?\") {
+            32_767
+        } else {
+            260
+        };
+
+        let mut buffer = vec![0u16; max_path];
+
+        let len = unsafe { GetFullPathNameW(
+            wide_path.as_ptr(),
+            max_path as u32, 
+            buffer.as_mut_ptr() as *mut u16, 
+            core::ptr::null_mut()
+        ) };
+
+        let slice = unsafe { core::slice::from_raw_parts(buffer.as_ptr(), len as usize) };
+        let mut absolute = String::from_utf16_lossy(slice);
+
+        let mut parts = Vec::new();
+        if absolute.starts_with(r"\\?\") {
+            parts.insert(0, r"\\?\".to_owned());
+            absolute = absolute[4..].to_owned()
+        }
+        
+        parts.extend(absolute.split(r"\").map(|s| s.to_owned()));
+
+        Self { parts }
+    }
+}
 
 pub fn create_dir(path: &str) -> error::Result<()> {
     let wide: &[u16] = wide!(path);

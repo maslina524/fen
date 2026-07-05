@@ -33,7 +33,7 @@ impl ErrorCode {
     }
 
     pub fn typ(&self) -> ErrorType {
-        match self.0 {
+        match self.code() {
             2   => ErrorType::FileNotFound,
             3   => ErrorType::PathNotFound,
             5   => ErrorType::AccessDenied,

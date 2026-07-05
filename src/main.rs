@@ -10,6 +10,7 @@ use crate::os::io;
 mod os;
 mod actions;
 mod toml;
+mod sha1;
 
 extern crate alloc;
 

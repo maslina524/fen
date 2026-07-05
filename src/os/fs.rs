@@ -1,7 +1,7 @@
 use core::ffi::c_void;
 
 use alloc::borrow::ToOwned;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::vec;
 
@@ -31,7 +31,7 @@ pub struct Path {
 
 impl Path {
     pub fn from_str(path: &str) -> Self {
-        let wide_path: &[u16] = wide!(path);
+        let wide_path = wide!(path);
         let max_path: usize = if path.starts_with(r"\\?\") {
             32_767
         } else {
@@ -60,10 +60,20 @@ impl Path {
 
         Self { parts }
     }
+
+    pub fn to_utf16_string(&self) -> Vec<u16> {
+        wide!(self.to_string())
+    }
+}
+
+impl core::fmt::Display for Path {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.parts.join(r"\"))
+    }
 }
 
 pub fn create_dir(path: &str) -> error::Result<()> {
-    let wide: &[u16] = wide!(path);
+    let wide = wide!(path);
 
     let result = unsafe { CreateDirectoryW(
         wide.as_ptr(), 
@@ -79,7 +89,7 @@ pub fn create_dir(path: &str) -> error::Result<()> {
 }
 
 pub fn set_file_attribute(path: &str, attributes: u32) -> error::Result<()> {
-    let wide: &[u16] = wide!(path);
+    let wide = wide!(path);
 
     let result = unsafe { SetFileAttributesW(
         wide.as_ptr(), 
@@ -95,7 +105,7 @@ pub fn set_file_attribute(path: &str, attributes: u32) -> error::Result<()> {
 }
 
 pub fn create_file(path: &str, content: &[u8], len: usize) -> error::Result<()> {
-    let path_wide: &[u16] = wide!(path);
+    let path_wide = wide!(path);
 
     let handle = unsafe { CreateFileW(
         path_wide.as_ptr(), 
@@ -134,7 +144,7 @@ pub fn create_file(path: &str, content: &[u8], len: usize) -> error::Result<()> 
 }
 
 pub fn is_dir(path: &str) -> bool {
-    let path_wide: &[u16] = wide!(path);
+    let path_wide = wide!(path);
     let attrs = unsafe { 
         GetFileAttributesW(path_wide.as_ptr()) 
     };
@@ -156,7 +166,7 @@ pub fn is_file(path: &str) -> bool {
 }
 
 pub fn exists(path: &str) -> bool {
-    let path_wide: &[u16] = wide!(path);
+    let path_wide = wide!(path);
     let ret =  unsafe {
         PathFileExistsW(path_wide.as_ptr())
     };

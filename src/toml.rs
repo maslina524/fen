@@ -4,7 +4,6 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-
 pub enum TomlValue {
     Number(f64),
     String(String),
@@ -94,4 +93,40 @@ impl core::fmt::Display for Toml {
 
         write!(f, "{}", lines.join("\n"))
     }
+}
+
+#[macro_export]
+macro_rules! toml_type {
+    () => {
+        $crate::toml::Category::new()
+    };
+    
+    ($section:expr => { $($key:expr => $value:expr),* $(,)? }) => {{
+        let mut map = $crate::toml::Category::new();
+        let mut section = $crate::toml::Category::new();
+        $(
+            section.insert($key.to_string(), $crate::toml::TomlValue::from($value));
+        )*
+        map.insert($section.to_string(), section);
+        map
+    }};
+    
+    ($($section:expr => { $($key:expr => $value:expr),* $(,)? }),* $(,)?) => {{
+        let mut map = $crate::toml::Category::new();
+        $(
+            let mut section = $crate::toml::Category::new();
+            $(
+                section.insert($key.to_string(), $crate::toml::TomlValue::from($value));
+            )*
+            map.insert($section.to_string(), section);
+        )*
+        map
+    }};
+}
+
+#[macro_export]
+macro_rules! toml {
+    ($($section:expr => { $($key:expr => $value:expr),* $(,)? }),* $(,)?) => {{
+        $crate::toml::Toml::from_map($crate::toml_type!($($section => { $($key => $value),* }),*))
+    }};
 }

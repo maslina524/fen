@@ -100,7 +100,16 @@ pub fn is_dir(path: &str) -> bool {
         return false
     }
 
-    return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    return (attrs & FILE_ATTRIBUTE_DIRECTORY) == 1;
+}
+
+pub fn is_file(path: &str) -> bool {
+    let path_wide = wide!(path);
+    let attrs = unsafe { GetFileAttributesW(path_wide.as_ptr()) };
+    if attrs == INVALID_FILE_ATTRIBUTES {
+        return false;
+    }
+    (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0
 }
 
 pub fn exists(path: &str) -> bool {

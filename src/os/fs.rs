@@ -102,3 +102,11 @@ pub fn is_dir(path: &str) -> bool {
 
     return (attrs & FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
+
+pub fn exists(path: &str) -> bool {
+    let path_wide: &[u16] = wide!(path);
+    let ret =  unsafe {
+        PathFileExistsW(path_wide.as_ptr())
+    };
+    ret == 1
+}

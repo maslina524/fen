@@ -14,8 +14,8 @@ impl Sha1 {
     pub fn encrypt(&mut self, content: &[u8]) {
         let mut ret = [0u8; 20];
 
-        let mut stream = Vec::new();
-        stream = self.padding(stream);
+        let stream = self.padding(Vec::new());
+        let stream = self.prepare(&stream);
 
         self.bytes = ret
     }
@@ -38,5 +38,26 @@ impl Sha1 {
         stream.extend(hl);
 
         stream
+    }
+
+    fn prepare(&self, stream: &[u8]) -> Vec<[u32; 16]> {
+        let mut blocks = Vec::new();
+        let n_blocks = stream.len() / 64;
+        for i in 0..n_blocks {
+            let mut words = [0u32; 16];
+
+            for j in 0..16 {
+                let mut word = 0u32;
+                for k in 0..4 {
+                    word = (word << 8) | stream[i*64 + j*4 + k] as u32;
+                }
+
+                words[j] = word;
+            }
+
+            blocks.push(words);
+        }
+
+        blocks
     }
 }

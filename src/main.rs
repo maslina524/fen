@@ -9,6 +9,7 @@ use crate::os::io;
 
 mod os;
 mod actions;
+mod toml;
 
 extern crate alloc;
 

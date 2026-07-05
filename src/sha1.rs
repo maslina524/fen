@@ -3,21 +3,21 @@ use alloc::vec::Vec;
 
 /// reference: https://github.com/pcaro90/Python-SHA1/blob/master/SHA1.py
 pub struct Sha1 {
-    bytes: [u8; 20]
+    bytes: [u32; 5]
 }
 
 impl Sha1 {
     pub fn new() -> Self {
-        Self { bytes: [0u8; 20] }
+        Self { bytes: [0u32; 5] }
     }
 
     pub fn encrypt(&mut self, content: &[u8]) {
-        let mut ret = [0u8; 20];
-
         let stream = self.padding(Vec::new());
         let stream = self.prepare(&stream);
 
-        self.bytes = ret
+        for block in stream {
+            // self.process_block(block);
+        }
     }
 
     fn padding(&self, mut stream: Vec<u8>) -> Vec<u8> {
@@ -60,4 +60,17 @@ impl Sha1 {
 
         blocks
     }
+
+    fn rotl(&self, n: u32, x: u32, w: u32) -> u32 {
+        (x << n) | (x >> w - n) 
+    }
+
+    // fn process_block(&mut self, block: [u32; 16]) {
+    //     let mask  = u32::MAX;
+
+    //     let mut w = Vec::from(block);
+    //     for t in 16..80 {
+    //         w.push()
+    //     }
+    // }
 }

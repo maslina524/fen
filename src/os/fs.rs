@@ -187,6 +187,23 @@ pub enum Item {
     File(String)
 }
 
+impl Item {
+    pub fn is_file(self) -> bool {
+        matches!(self, Item::File(_))
+    }
+
+    pub fn is_dir(self) -> bool {
+        matches!(self, Item::Directory(_))
+    }
+
+    pub fn name(self) -> String {
+        match self {
+            Item::File(n) => n,
+            Item::Directory(n) => n
+        }
+    }
+}
+
 pub fn get_items_from_dir<T: Into<Path>>(dir: T) -> error::Result<Vec<Item>> {
     let mut ret = Vec::new();
     let base_path = dir.into();

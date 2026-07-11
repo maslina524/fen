@@ -23,6 +23,9 @@ link!("shell32" "system" fn CommandLineToArgvW(lpcmdline : PCWSTR, pnumargs : *m
 link!("kernel32" "system" fn CreateDirectoryW(lppathname : PCWSTR, lpsecurityattributes : *const SECURITY_ATTRIBUTES) -> BOOL);
 link!("kernel32" "system" fn CreateFileW(lpfilename : PCWSTR, dwdesiredaccess : u32, dwsharemode : FILE_SHARE_MODE, lpsecurityattributes : *const SECURITY_ATTRIBUTES, dwcreationdisposition : FILE_CREATION_DISPOSITION, dwflagsandattributes : FILE_FLAGS_AND_ATTRIBUTES, htemplatefile : HANDLE) -> HANDLE);
 link!("kernel32" "system" fn ExitProcess(uexitcode : u32) -> !);
+link!("kernel32" "system" fn FindClose(hfindfile : HANDLE) -> BOOL);
+link!("kernel32" "system" fn FindFirstFileW(lpfilename : PCWSTR, lpfindfiledata : *mut WIN32_FIND_DATAW) -> HANDLE);
+link!("kernel32" "system" fn FindNextFileW(hfindfile : HANDLE, lpfindfiledata : *mut WIN32_FIND_DATAW) -> BOOL);
 link!("kernel32" "system" fn FormatMessageW(dwflags : FORMAT_MESSAGE_OPTIONS, lpsource : *const core::ffi::c_void, dwmessageid : u32, dwlanguageid : u32, lpbuffer : PWSTR, nsize : u32, arguments : *const *const i8) -> u32);
 link!("kernel32" "system" fn GetCommandLineW() -> PCWSTR);
 link!("kernel32" "system" fn GetFileAttributesW(lpfilename : PCWSTR) -> u32);
@@ -38,6 +41,12 @@ link!("kernel32" "system" fn SetConsoleOutputCP(wcodepageid : u32) -> BOOL);
 link!("kernel32" "system" fn SetFileAttributesW(lpfilename : PCWSTR, dwfileattributes : FILE_FLAGS_AND_ATTRIBUTES) -> BOOL);
 link!("kernel32" "system" fn WriteFile(hfile : HANDLE, lpbuffer : *const u8, nnumberofbytestowrite : u32, lpnumberofbyteswritten : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 pub type BOOL = i32;
+#[repr(C)]
+#[derive(Clone, Copy, Default, Debug)]
+pub struct FILETIME {
+    pub dwLowDateTime: u32,
+    pub dwHighDateTime: u32,
+}
 pub type FILE_CREATION_DISPOSITION = u32;
 pub type FILE_FLAGS_AND_ATTRIBUTES = u32;
 pub type FILE_SHARE_MODE = u32;
@@ -92,3 +101,22 @@ impl Default for SECURITY_ATTRIBUTES {
 }
 pub type STD_HANDLE = u32;
 pub type WIN32_ERROR = u32;
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct WIN32_FIND_DATAW {
+    pub dwFileAttributes: u32,
+    pub ftCreationTime: FILETIME,
+    pub ftLastAccessTime: FILETIME,
+    pub ftLastWriteTime: FILETIME,
+    pub nFileSizeHigh: u32,
+    pub nFileSizeLow: u32,
+    pub dwReserved0: u32,
+    pub dwReserved1: u32,
+    pub cFileName: [u16; 260],
+    pub cAlternateFileName: [u16; 14],
+}
+impl Default for WIN32_FIND_DATAW {
+    fn default() -> Self {
+        unsafe { core::mem::zeroed() }
+    }
+}

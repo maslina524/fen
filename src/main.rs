@@ -25,15 +25,12 @@ mod panic_impl {
 
     #[panic_handler]
     fn panic(info: &PanicInfo) -> ! {
-        let msg = info.message().as_str().unwrap_or("No message for panic");
-        println!("panic: {msg}");
-
+        println!("{}", info.message());
+        
         if let Some(loc) = info.location() {
-            let line = loc.line();
-            let column = loc.column();
-            let file_name = loc.file();
-            println!("{}:{}:{}", file_name, line, column);
+            println!("{}:{}:{}", loc.file(), loc.line(), loc.column());
         }
+        
         unsafe { ExitProcess(101) }
     }
 }
@@ -53,17 +50,20 @@ fn exec_path() -> NoResult {
 #[unsafe(no_mangle)]
 extern "C" fn main() -> i32 {
     io::set_console_to_utf8();
-    
+
     let argv = os::env::args();
     let action = match argv.get(1) {
         Some(arg) => arg,
         None => return 1
     };
 
+    let raw_argv = &argv[2..];
+
     let result: NoResult = match action.as_str() {
         "version" | "--version" => version(),
         "--exec-path" => exec_path(),
         "init" => actions::init(),
+        "add" => actions::add(raw_argv),
         _ => Err(format!("unknown command `{action}`").into())
     };
 

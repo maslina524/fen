@@ -25,7 +25,14 @@ fn glob_rec(p: &[char], pi: usize, t: &[char], ti: usize) -> bool {
             }
             false
         }
-        '[' => false,
+        '[' => {
+            let (matched, new_pi) = parse_class(p, pi, t[ti]);
+            if matched {
+                glob_rec(p, new_pi, t, ti + 1)
+            } else {
+                false
+            }
+        }
         c => {
             if c == t[ti] {
                 glob_rec(p, pi + 1, t, ti + 1)
@@ -34,4 +41,55 @@ fn glob_rec(p: &[char], pi: usize, t: &[char], ti: usize) -> bool {
             }
         }
     }
+}
+
+fn parse_class(p: &[char], pi: usize, ch: char) -> (bool, usize) {
+    if pi + 1 >= p.len() {
+        return (false, pi);
+    }
+
+    let mut idx = pi + 1;
+    let mut negate = false;
+
+    if p[idx] == '!' || p[idx] == '^' {
+        negate = true;
+        idx += 1;
+        if idx >= p.len() || p[idx] == ']' {
+            return (false, pi);
+        }
+    }
+
+    let start_idx = idx;
+    let mut matched = false;
+
+    while idx < p.len() && p[idx] != ']' {
+        if p[idx] == '-'
+            && idx > start_idx
+            && idx + 1 < p.len()
+            && p[idx + 1] != ']'
+        {
+            let start = p[idx - 1];
+            let end = p[idx + 1];
+            if start <= ch && ch <= end {
+                matched = true;
+            }
+            idx += 2;
+            continue;
+        }
+
+        if p[idx] == ch {
+            matched = true;
+        }
+        idx += 1;
+    }
+
+    if idx < p.len() && p[idx] == ']' {
+        let new_pi = idx + 1;
+        if negate {
+            matched = !matched;
+        }
+        return (matched, new_pi);
+    }
+
+    (false, pi)
 }

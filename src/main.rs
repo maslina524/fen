@@ -11,6 +11,7 @@ mod os;
 mod actions;
 mod toml;
 mod sha1;
+mod glob;
 
 extern crate alloc;
 

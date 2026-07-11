@@ -30,9 +30,9 @@ pub struct Path {
 }
 
 impl Path {
-    pub fn from_str(path: &str) -> Self {
-        let wide_path = wide!(path);
-        let max_path: usize = if path.starts_with(r"\\?\") {
+    pub fn from_str(string: &str) -> Self {
+        let wide_path = wide!(string);
+        let max_path: usize = if string.starts_with(r"\\?\") {
             32_767
         } else {
             260
@@ -72,8 +72,14 @@ impl core::fmt::Display for Path {
     }
 }
 
-pub fn create_dir(path: &str) -> error::Result<()> {
-    let wide = wide!(path);
+impl From<&str> for Path {
+    fn from(s: &str) -> Self {
+        Path::from_str(s)
+    }
+}
+
+pub fn create_dir<T: Into<Path>>(path: T) -> error::Result<()> {
+    let wide = path.into().to_utf16_string();
 
     let result = unsafe { CreateDirectoryW(
         wide.as_ptr(), 
@@ -88,8 +94,8 @@ pub fn create_dir(path: &str) -> error::Result<()> {
     Ok(())
 }
 
-pub fn set_file_attribute(path: &str, attributes: u32) -> error::Result<()> {
-    let wide = wide!(path);
+pub fn set_file_attribute<T: Into<Path>>(path: T, attributes: u32) -> error::Result<()> {
+    let wide = path.into().to_utf16_string();
 
     let result = unsafe { SetFileAttributesW(
         wide.as_ptr(), 
@@ -104,8 +110,8 @@ pub fn set_file_attribute(path: &str, attributes: u32) -> error::Result<()> {
     Ok(())
 }
 
-pub fn create_file(path: &str, content: &[u8], len: usize) -> error::Result<()> {
-    let path_wide = wide!(path);
+pub fn create_file<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error::Result<()> {
+    let path_wide = path.into().to_utf16_string();
 
     let handle = unsafe { CreateFileW(
         path_wide.as_ptr(), 
@@ -143,8 +149,8 @@ pub fn create_file(path: &str, content: &[u8], len: usize) -> error::Result<()> 
     Ok(())
 }
 
-pub fn is_dir(path: &str) -> bool {
-    let path_wide = wide!(path);
+pub fn is_dir<T: Into<Path>>(path: T) -> bool {
+    let path_wide = path.into().to_utf16_string();
     let attrs = unsafe { 
         GetFileAttributesW(path_wide.as_ptr()) 
     };
@@ -156,8 +162,8 @@ pub fn is_dir(path: &str) -> bool {
     return (attrs & FILE_ATTRIBUTE_DIRECTORY) == 1;
 }
 
-pub fn is_file(path: &str) -> bool {
-    let path_wide = wide!(path);
+pub fn is_file<T: Into<Path>>(path: T) -> bool {
+    let path_wide = path.into().to_utf16_string();
     let attrs = unsafe { GetFileAttributesW(path_wide.as_ptr()) };
     if attrs == INVALID_FILE_ATTRIBUTES {
         return false;
@@ -165,8 +171,8 @@ pub fn is_file(path: &str) -> bool {
     (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0
 }
 
-pub fn exists(path: &str) -> bool {
-    let path_wide = wide!(path);
+pub fn exists<T: Into<Path>>(path: T) -> bool {
+    let path_wide = path.into().to_utf16_string();
     let ret =  unsafe {
         PathFileExistsW(path_wide.as_ptr())
     };

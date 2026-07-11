@@ -28,6 +28,7 @@ link!("kernel32" "system" fn FindFirstFileW(lpfilename : PCWSTR, lpfindfiledata 
 link!("kernel32" "system" fn FindNextFileW(hfindfile : HANDLE, lpfindfiledata : *mut WIN32_FIND_DATAW) -> BOOL);
 link!("kernel32" "system" fn FormatMessageW(dwflags : FORMAT_MESSAGE_OPTIONS, lpsource : *const core::ffi::c_void, dwmessageid : u32, dwlanguageid : u32, lpbuffer : PWSTR, nsize : u32, arguments : *const *const i8) -> u32);
 link!("kernel32" "system" fn GetCommandLineW() -> PCWSTR);
+link!("kernel32" "system" fn GetCurrentDirectoryW(nbufferlength : u32, lpbuffer : PWSTR) -> u32);
 link!("kernel32" "system" fn GetFileAttributesW(lpfilename : PCWSTR) -> u32);
 link!("kernel32" "system" fn GetFullPathNameW(lpfilename : PCWSTR, nbufferlength : u32, lpbuffer : PWSTR, lpfilepart : *mut PWSTR) -> u32);
 link!("kernel32" "system" fn GetLastError() -> WIN32_ERROR);
@@ -42,7 +43,7 @@ link!("kernel32" "system" fn SetFileAttributesW(lpfilename : PCWSTR, dwfileattri
 link!("kernel32" "system" fn WriteFile(hfile : HANDLE, lpbuffer : *const u8, nnumberofbytestowrite : u32, lpnumberofbyteswritten : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 pub type BOOL = i32;
 #[repr(C)]
-#[derive(Clone, Copy, Default, Debug)]
+#[derive(Clone, Copy, Default)]
 pub struct FILETIME {
     pub dwLowDateTime: u32,
     pub dwHighDateTime: u32,
@@ -102,7 +103,7 @@ impl Default for SECURITY_ATTRIBUTES {
 pub type STD_HANDLE = u32;
 pub type WIN32_ERROR = u32;
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct WIN32_FIND_DATAW {
     pub dwFileAttributes: u32,
     pub ftCreationTime: FILETIME,

@@ -6,7 +6,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::vec;
 
-use crate::{println, wide};
+use crate::wide;
 use crate::os::windows::*;
 use crate::os::error::{self, ErrorCode};
 
@@ -60,6 +60,20 @@ impl Path {
         parts.extend(absolute.split(r"\").map(|s| s.to_owned()));
 
         Self { parts }
+    }
+
+    pub fn current() -> Self {
+        let mut buf = [0u16; 32_767];
+        let len = unsafe { GetCurrentDirectoryW(
+            32_767,
+            &mut buf as *mut u16
+        ) };
+        if len == 0 {
+            ErrorCode::last().panic()
+        }
+
+        let string = String::from_utf16_lossy(&buf[..len as usize]);
+        Self::from_str(&string)
     }
 
     pub fn to_utf16_string(&self) -> Vec<u16> {
@@ -204,7 +218,7 @@ impl Item {
     }
 }
 
-pub fn get_items_from_dir<T: Into<Path>>(dir: T) -> error::Result<Vec<Item>> {
+pub fn read_dir<T: Into<Path>>(dir: T) -> error::Result<Vec<Item>> {
     let mut ret = Vec::new();
     let base_path = dir.into();
     let search_path = base_path.clone().join("*");

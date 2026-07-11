@@ -1,6 +1,6 @@
 use core::fmt::Display;
 
-use alloc::{borrow::ToOwned, string::String};
+use alloc::string::String;
 
 use crate::os::windows::{FormatMessageW, GetLastError};
 

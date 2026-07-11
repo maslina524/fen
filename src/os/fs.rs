@@ -180,3 +180,55 @@ pub fn exists<T: Into<Path>>(path: T) -> bool {
     };
     ret == 1
 }
+
+#[derive(Debug, Clone)]
+pub enum Item {
+    Directory(String),
+    File(String)
+}
+
+pub fn get_items_from_dir<T: Into<Path>>(dir: T) -> error::Result<Vec<Item>> {
+    let mut ret = Vec::new();
+    let base_path = dir.into();
+    let search_path = base_path.clone().join("*");
+    let search_path_wide = search_path.to_utf16_string();
+
+    let mut data = unsafe { mem::zeroed() };
+    let handle = unsafe { FindFirstFileW(search_path_wide.as_ptr(), &mut data) };
+    if handle == INVALID_HANDLE_VALUE {
+        ErrorCode::last().panic()
+    }
+
+    let name = get_name_from_buf(&data.cFileName);
+    if name != "." && name != ".." {
+        let item = if base_path.clone().join(&name).is_file() {
+            Item::File(name)
+        } else {
+            Item::Directory(name)
+        };
+        ret.push(item);
+    }
+
+    while unsafe { FindNextFileW(handle, &mut data) } == 1 {
+        let name = get_name_from_buf(&data.cFileName);
+        if name == "." || name == ".." { continue; }
+        let item = if base_path.clone().join(&name).is_file() {
+            Item::File(name)
+        } else {
+            Item::Directory(name)
+        };
+        ret.push(item);
+    }
+
+    unsafe { FindClose(handle) };
+    Ok(ret)
+}
+
+fn get_name_from_buf(name_buf: &[u16]) -> String {
+    let mut len = 0;
+
+    while name_buf[len] != 0 { len += 1; }
+    let name = String::from_utf16_lossy(&name_buf[..len]);
+
+    return name;
+}

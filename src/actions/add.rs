@@ -1,0 +1,78 @@
+use alloc::string::String;
+use alloc::vec::Vec;
+
+use crate::{NoResult, glob, println};
+use crate::os::fs::{self, Path};
+
+pub fn add(patterns: &[String]) -> NoResult {
+    if patterns.is_empty() {
+        return Err("No file patterns to add to index".into());
+    }
+
+    let files = find_files(patterns);
+    for file in files {
+        println!("{file}");
+    }
+
+    Ok(())
+}
+
+fn find_files(patterns: &[String]) -> Vec<Path> {
+    let mut results = Vec::new();
+    for pat in patterns {
+        let pat = pat.replace('\\', "/");
+        let parts: Vec<&str> = pat.split('/').collect();
+        let root = Path::current();
+        search_recursive(&root, &parts, &mut results);
+    }
+    results
+}
+
+fn search_recursive(current: &Path, parts: &[&str], results: &mut Vec<Path>) {
+    if parts.is_empty() {
+        if current.is_file() {
+            results.push(current.clone());
+        }
+        return;
+    }
+
+    let part = parts[0];
+    let rest = &parts[1..];
+
+    if part == "**" {
+        search_recursive(current, rest, results);
+
+        if let Ok(items) = fs::read_dir(current.clone()) {
+            for item in items {
+                let name = item.name();
+                let sub_path = current.clone().join(&name);
+                if sub_path.is_dir() {
+                    search_recursive(&sub_path, parts, results);
+                }
+            }
+        }
+        return;
+    }
+
+    let items = match fs::read_dir(current.clone()) {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+
+    for item in items {
+        let name = item.name();
+        if glob::glob(part, &name) {
+            let sub_path = current.clone().join(&name);
+
+            if rest.is_empty() {
+                if sub_path.is_file() {
+                    results.push(sub_path);
+                }
+            } else {
+                if sub_path.is_dir() {
+                    search_recursive(&sub_path, rest, results);
+                }
+            }
+        }
+    }
+}

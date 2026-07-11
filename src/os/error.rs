@@ -1,6 +1,6 @@
 use core::fmt::Display;
 
-use alloc::string::String;
+use alloc::{borrow::ToOwned, string::String};
 
 use crate::os::windows::{FormatMessageW, GetLastError};
 
@@ -43,13 +43,21 @@ impl ErrorCode {
             _ => unreachable!("unknown error")
         }
     }
+
+    #[track_caller]
+    pub fn panic(&self) -> ! {
+        panic!("os err: {self}")
+    }
 }
 
 impl Display for ErrorCode {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        const FORMAT_MESSAGE_FROM_SYSTEM: u32 = 0x00001000;
+        const FORMAT_MESSAGE_IGNORE_INSERTS: u32 = 0x00000200;
+
         let buf = [0u16; 128];
         let len = unsafe { FormatMessageW(
-            0, 
+            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 
             core::ptr::null(), 
             self.0, 
             0, 
@@ -59,7 +67,7 @@ impl Display for ErrorCode {
         ) };
 
         let slice = unsafe { core::slice::from_raw_parts(&buf as *const u16, len as usize) };
-        let string = String::from_utf16_lossy(slice);
+        let string = String::from_utf16_lossy(slice).trim().rsplit("\n").collect::<String>();
 
         write!(f, "{string}")
     }

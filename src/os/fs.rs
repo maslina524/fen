@@ -1,11 +1,12 @@
 use core::ffi::c_void;
+use core::mem;
 
 use alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::vec;
 
-use crate::wide;
+use crate::{println, wide};
 use crate::os::windows::*;
 use crate::os::error::{self, ErrorCode};
 
@@ -63,6 +64,29 @@ impl Path {
 
     pub fn to_utf16_string(&self) -> Vec<u16> {
         wide!(self.to_string())
+    }
+
+    pub fn join(mut self, part: &str) -> Self {
+        self.parts.push(part.to_owned());
+        self
+    }
+
+    pub fn is_dir(&self) -> bool {
+        let path_wide = self.to_utf16_string();
+        let attrs = unsafe { GetFileAttributesW(path_wide.as_ptr()) };
+        if attrs == INVALID_FILE_ATTRIBUTES {
+            return false
+        }
+        return (attrs & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY;
+    }
+
+    pub fn is_file(&self) -> bool {
+        let path_wide = self.to_utf16_string();
+        let attrs = unsafe { GetFileAttributesW(path_wide.as_ptr()) };
+        if attrs == INVALID_FILE_ATTRIBUTES {
+            return false;
+        }
+        (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0
     }
 }
 
@@ -149,31 +173,9 @@ pub fn create_file<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error:
     Ok(())
 }
 
-pub fn is_dir<T: Into<Path>>(path: T) -> bool {
-    let path_wide = path.into().to_utf16_string();
-    let attrs = unsafe { 
-        GetFileAttributesW(path_wide.as_ptr()) 
-    };
-
-    if attrs == INVALID_FILE_ATTRIBUTES {
-        return false
-    }
-
-    return (attrs & FILE_ATTRIBUTE_DIRECTORY) == 1;
-}
-
-pub fn is_file<T: Into<Path>>(path: T) -> bool {
-    let path_wide = path.into().to_utf16_string();
-    let attrs = unsafe { GetFileAttributesW(path_wide.as_ptr()) };
-    if attrs == INVALID_FILE_ATTRIBUTES {
-        return false;
-    }
-    (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0
-}
-
 pub fn exists<T: Into<Path>>(path: T) -> bool {
     let path_wide = path.into().to_utf16_string();
-    let ret =  unsafe {
+    let ret = unsafe {
         PathFileExistsW(path_wide.as_ptr())
     };
     ret == 1

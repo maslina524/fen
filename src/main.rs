@@ -9,9 +9,11 @@ use crate::os::io;
 
 mod os;
 mod actions;
+
 mod toml;
 mod sha1;
 mod glob;
+mod sync;
 
 extern crate alloc;
 

@@ -55,3 +55,52 @@ impl Stream {
         bits
     }
 }
+
+pub struct WriteStream {
+    memory: Vec<u8>,
+    byte: u8,
+    bit_idx: usize
+}
+
+impl WriteStream {
+    pub fn new() -> Self {
+        Self { memory: Vec::new(), byte: 0, bit_idx: 0 }
+    }
+
+    pub fn write_bit(&mut self, bit: u8) {
+        if bit == 1 {
+            self.byte |= 1 << self.bit_idx
+        }
+
+        self.bit_idx += 1;
+        if self.bit_idx == 8 {
+            self.memory.push(self.byte);
+            self.byte = 0;
+            self.bit_idx = 0;
+        } 
+    }
+
+    pub fn write_bits(&mut self, value: u32, count: usize, msb_first: bool) {
+        if msb_first {
+            for i in count - 1..-1 {
+                self.write_bit(((value >> i) & 1) as u8);
+            }
+        } else {
+            for i in 0..count {
+                self.write_bit(((value >> i) & 1) as u8);
+            }
+        }
+    }
+
+    pub fn flush(&mut self) {
+        if self.bit_idx > 0 {
+            self.memory.push(self.byte);
+            self.byte = 0;
+            self.bit_idx = 0;
+        }
+    }
+
+    pub fn get_bytes(&self) -> Vec<u8> {
+        self.memory
+    }
+}

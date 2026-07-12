@@ -3,6 +3,10 @@ use alloc::vec::Vec;
 const CMF: u8 = 0x78;
 const FLG: u8 = 0x01;
 
+fn encode_block_fixed(bytes: Vec<u8>) -> Vec<u8> {
+    
+}
+
 fn adler32(bytes: Vec<u8>) -> u64 {
     let mut a = 1u64;
     let mut b = 1u64;
@@ -21,4 +25,7 @@ pub fn compress(bytes: Vec<u8>, buf: &mut Vec<u8>) {
 
     buf.push(CMF);
     buf.push(FLG);
+
+    buf.extend(deflate_data);
+    buf.extend(adler_bytes);
 }

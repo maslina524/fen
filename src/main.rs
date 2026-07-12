@@ -1,5 +1,5 @@
-#![no_std]
-#![no_main]
+#[cfg_attr(not(test), no_std)]
+#[cfg_attr(not(test), no_main)]
 
 pub type NoResult = Result<(), Box<dyn core::error::Error>>;
 
@@ -9,6 +9,7 @@ use crate::os::io;
 
 mod os;
 mod actions;
+mod zlib;
 
 mod toml;
 mod sha1;
@@ -49,6 +50,7 @@ fn exec_path() -> NoResult {
     Ok(())
 }
 
+#[cfg(not(test))]
 #[unsafe(no_mangle)]
 extern "C" fn main() -> i32 {
     io::set_console_to_utf8();
@@ -75,4 +77,31 @@ extern "C" fn main() -> i32 {
     }
 
     return 0;
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::io;
+    use crate::zlib;
+    
+    extern crate std;
+
+    #[test]
+    fn zlib_decompress() {
+        io::set_console_to_utf8();
+
+        let string = std::fs::read(".git/objects/e3/c310b8a4e65d316bb5f51f8e53bc47232f817e").unwrap();
+        let mut decoded = Vec::new();
+        zlib::decompress(string, &mut decoded);
+
+        let mut ret = String::new();
+        for byte in &decoded {
+            if (0x20..=0x7E).contains(byte) {
+                ret.push(*byte as char);
+            } else {
+                ret.push_str(&format!(r"\x{byte:02x}"));
+            }
+        }
+        crate::println!("Data: \nb\"{ret}\"\n\nRaw: \n{decoded:?}");
+    }
 }

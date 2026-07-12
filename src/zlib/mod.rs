@@ -1,5 +1,5 @@
 mod stream;
 mod huffman;
-pub mod decompress;
+mod decompress;
 
 pub use decompress::decompress;

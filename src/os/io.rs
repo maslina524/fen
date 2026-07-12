@@ -4,33 +4,19 @@ use core::sync::atomic::{AtomicPtr, Ordering};
 use alloc::boxed::Box;
 
 use crate::os::windows::*;
+use crate::sync::OnceLock;
 
 const CP_UTF8: u32 = 65001;
 const INVALID_HANDLE_VALUE: *mut c_void = -1 as isize as *mut c_void;
 const STDOUT_HANDLE: u32 = 0xFFFFFFF5;
 const STDERR_HANDLE: u32 = 0xFFFFFFF4;
 
-static IO_PTR: AtomicPtr<Io> = AtomicPtr::new(core::ptr::null_mut());
+static IO_PTR: OnceLock<Io> = OnceLock::new();
 
 pub fn get_io() -> &'static Io {
-    let mut ptr = IO_PTR.load(Ordering::Acquire);
-    if ptr.is_null() {
-        let new_io = Box::new(Io::new());
-        let new_ptr = Box::into_raw(new_io);
-        match IO_PTR.compare_exchange(
-            core::ptr::null_mut(),
-            new_ptr,
-            Ordering::Release,
-            Ordering::Acquire,
-        ) {
-            Ok(_) => ptr = new_ptr,
-            Err(existing) => {
-                unsafe { drop(Box::from_raw(new_ptr)); }
-                ptr = existing;
-            }
-        }
-    }
-    unsafe { &*ptr }
+    IO_PTR.get_or_init(|| {
+        Io::new()
+    })
 }
 
 pub fn set_console_to_utf8() {
@@ -79,6 +65,8 @@ impl Io {
         self.raw_print(self.stderr, string)
     }
 }
+
+unsafe impl Sync for Io {}
 
 #[macro_export]
 macro_rules! print {

@@ -12,7 +12,7 @@ pub struct OnceLock<T> {
 }
 
 impl<T> OnceLock<T> {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self { state: AtomicU8::new(INCOMPLETE), value: UnsafeCell::new(MaybeUninit::uninit()) }
     }
 
@@ -44,3 +44,5 @@ impl<T> OnceLock<T> {
         }
     }
 }
+
+unsafe impl<T: Sync> Sync for OnceLock<T> {}

@@ -1,1 +1,2 @@
-pub mod stream;
+mod stream;
+mod huffman;

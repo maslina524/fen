@@ -80,7 +80,7 @@ impl HuffmanTree {
     }
 }
 
-pub fn decode_symb(mut stream: Stream, tree: HuffmanTree) -> Option<char> {
+pub fn decode_symb(stream: &mut Stream, tree: &HuffmanTree) -> Option<char> {
     let mut curr = &tree.root;
 
     while curr.left.is_some() || curr.right.is_some() {

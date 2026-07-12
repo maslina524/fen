@@ -1,5 +1,5 @@
-#[cfg_attr(not(test), no_std)]
-#[cfg_attr(not(test), no_main)]
+#![cfg_attr(not(test), no_std)]
+#![cfg_attr(not(test), no_main)]
 
 pub type NoResult = Result<(), Box<dyn core::error::Error>>;
 
@@ -103,5 +103,20 @@ mod tests {
             }
         }
         crate::println!("Data: \nb\"{ret}\"\n\nRaw: \n{decoded:?}");
+    }
+
+    #[test]
+    fn zlib_compress() {
+        io::set_console_to_utf8();
+
+        let string: Vec<u8> = "Hello World!".bytes().collect();
+
+        let mut encoded = Vec::new();
+        zlib::compress(&string, &mut encoded);
+
+        let mut decoded = Vec::new();
+        zlib::decompress(encoded, &mut decoded);
+        
+        assert_eq!(string, decoded)
     }
 }

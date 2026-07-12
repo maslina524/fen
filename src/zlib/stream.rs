@@ -82,7 +82,7 @@ impl WriteStream {
 
     pub fn write_bits(&mut self, value: u32, count: usize, msb_first: bool) {
         if msb_first {
-            for i in count - 1..-1 {
+            for i in (0..count).rev() {
                 self.write_bit(((value >> i) & 1) as u8);
             }
         } else {
@@ -100,7 +100,7 @@ impl WriteStream {
         }
     }
 
-    pub fn get_bytes(&self) -> Vec<u8> {
-        self.memory
+    pub fn get_bytes(&self) -> &Vec<u8> {
+        &self.memory
     }
 }

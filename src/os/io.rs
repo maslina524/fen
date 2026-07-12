@@ -1,7 +1,4 @@
 use core::ffi::c_void;
-use core::sync::atomic::{AtomicPtr, Ordering};
-
-use alloc::boxed::Box;
 
 use crate::os::windows::*;
 use crate::sync::OnceLock;

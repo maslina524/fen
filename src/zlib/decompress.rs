@@ -8,8 +8,9 @@ const LENGTH_BASE: [u32; 29] = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23,
 const LENGTH_EXTRA_BITS: [u32; 29] = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
 const DISTANCE_BASE: [u32; 30] = [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577];
 const DISTANCE_EXTRA_BITS: [u32; 30] = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+const CODE_LEN_CODES_ORDER: [u32; 19] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
 
-pub fn inflate_block_no_compression(mut stream: Stream, inflated: &mut Vec<u8>) {
+pub fn inflate_block_no_compression(stream: &mut Stream, inflated: &mut Vec<u8>) {
     let len = stream.read_bytes(2);
 	// let nlen = stream.read_bytes(2);
 
@@ -18,9 +19,9 @@ pub fn inflate_block_no_compression(mut stream: Stream, inflated: &mut Vec<u8>) 
     }
 }
 
-pub fn inflate_compressed_block(mut stream: Stream, literal_len_tree: HuffmanTree, distance_tree: HuffmanTree, inflated: &mut Vec<u8>) {
+pub fn inflate_compressed_block(stream: &mut Stream, literal_len_tree: HuffmanTree, distance_tree: HuffmanTree, inflated: &mut Vec<u8>) {
     loop {
-        let symb = decode_symb(&mut stream, &literal_len_tree).unwrap() as u32;
+        let symb = decode_symb(stream, &literal_len_tree).unwrap() as u32;
 
         if symb < 256 {
             inflated.push(symb as u8);
@@ -29,7 +30,7 @@ pub fn inflate_compressed_block(mut stream: Stream, literal_len_tree: HuffmanTre
         } else {
             let i = (symb - 257) as usize;
             let len = DISTANCE_BASE[i] + stream.read_bits(LENGTH_EXTRA_BITS[i] as usize) as u32;
-            let symb = decode_symb(&mut stream, &distance_tree).unwrap() as usize;
+            let symb = decode_symb(stream, &distance_tree).unwrap() as usize;
             let distance = DISTANCE_BASE[symb] + stream.read_bits(DISTANCE_EXTRA_BITS[symb] as usize) as u32;
             
             for _ in 0..len {
@@ -55,12 +56,12 @@ pub fn inflate_block_fixed_huffman(mut stream: Stream, inflated: &mut Vec<u8>) {
         bl_list.push(8);
     }
 
-    let literal_len_tree = HuffmanTree::from_alphabet_and_bl_list(Vec::from_iter(0..256), bl_list);
+    let literal_len_tree = HuffmanTree::from_alphabet_and_bl_list(Vec::from_iter(0..286), bl_list);
 
     bl_list = vec![5; 30];
     let distance_tree = HuffmanTree::from_alphabet_and_bl_list(Vec::from_iter(0..30), bl_list);
 
-    inflate_compressed_block(stream, literal_len_tree, distance_tree, inflated)
+    inflate_compressed_block(&mut stream, literal_len_tree, distance_tree, inflated)
 }
 
 fn inflate(mut stream: Stream) -> Vec<u8> {
@@ -72,13 +73,59 @@ fn inflate(mut stream: Stream) -> Vec<u8> {
         let btype = stream.read_bits(2);
 
         match btype {
-            0b00 => inflate_block_no_compression(stream, &mut inflated),
+            0b00 => inflate_block_no_compression(&mut stream, &mut inflated),
             0b01 => inflate_block_fixed_huffman(stream.clone(), &mut inflated),
-            0b10 => inflate_block_dynamic_huffman(stream, &mut inflated),
+            0b10 => inflate_block_dynamic_huffman(&mut stream, &mut inflated),
+            _ => {}
         }
     }
 
     inflated
+}
+
+pub fn decode_trees(stream: &mut Stream) -> (HuffmanTree, HuffmanTree) {
+    let hlit = stream.read_bits(5) + 257;
+    let hdist = stream.read_bits(5) + 1;
+    let hclen = stream.read_bits(4) + 1;
+
+    let mut code_len_bl_list = vec![0; 19];
+    for i in 0..hclen {
+        code_len_bl_list[CODE_LEN_CODES_ORDER[i as usize] as usize] = stream.read_bits(3) as u8;
+    }
+
+    let code_len_tree = HuffmanTree::from_alphabet_and_bl_list(Vec::from_iter(0..19), code_len_bl_list);
+
+    let mut bl_list = Vec::new();
+    while bl_list.len() < (hlit + hdist) as usize {
+        let symb = decode_symb(stream, &code_len_tree).unwrap() as u8;
+        if symb < 16 {
+            bl_list.push(symb);
+        } else if symb == 16 {
+            let prev_code_len = bl_list[bl_list.len()];
+            let repeat_len = stream.read_bits(2) + 3;
+            for _ in 0..repeat_len {
+                bl_list.push(prev_code_len);
+            }
+        } else if symb == 17 {
+            let repeat_len = stream.read_bits(3) + 3;
+            for _ in 0..repeat_len {
+                bl_list.push(0);
+            }
+        } else {
+            let repeat_len = stream.read_bits(7) + 11;
+            for _ in 0..repeat_len {
+                bl_list.push(0);
+            }
+        }
+    }
+    let literal_len_tree = HuffmanTree::from_alphabet_and_bl_list(Vec::from_iter(0..286), Vec::from(&bl_list[..hlit as usize]));
+    let distance_tree = HuffmanTree::from_alphabet_and_bl_list(Vec::from_iter(0..30), Vec::from(&bl_list[(hlit as usize)..]));
+    (literal_len_tree, distance_tree)
+}
+
+pub fn inflate_block_dynamic_huffman(stream: &mut Stream, inflated: &mut Vec<u8>) {
+    let (literal_len_tree, distance_tree) = decode_trees(stream);
+    inflate_compressed_block(stream, literal_len_tree, distance_tree, inflated)
 }
 
 pub fn decompress(bytes: Vec<u8>, buf: &mut Vec<u8>) -> u32 {

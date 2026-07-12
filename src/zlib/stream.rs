@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 
+#[derive(Debug, Clone)]
 pub struct Stream {
     memory: Vec<u8>,
     byte_idx: usize,

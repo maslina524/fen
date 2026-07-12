@@ -27,7 +27,7 @@ impl HuffmanTree {
         Self { root: HuffmanNode::new() }
     }
 
-    pub fn from_alphabet_and_bl_list(alphabet: Vec<u8>, bl_list: Vec<u8>) -> Self {
+    pub fn from_alphabet_and_bl_list(alphabet: Vec<u32>, bl_list: Vec<u8>) -> Self {
         let max_bits = bl_list.iter().max().unwrap();
 
         let mut bl_count = vec![0; bl_list.len()];

@@ -127,12 +127,12 @@ impl Sha1 {
         let mut ret = [0u8; 20];
         let mut idx = 0;
 
-        ret[idx..idx+4].copy_from_slice(&a.to_le_bytes()); idx += 4;
-        ret[idx..idx+4].copy_from_slice(&b.to_le_bytes()); idx += 4;
-        ret[idx..idx+4].copy_from_slice(&c.to_le_bytes()); idx += 4;
-        ret[idx..idx+4].copy_from_slice(&d.to_le_bytes()); idx += 4;
-        ret[idx..idx+4].copy_from_slice(&e.to_le_bytes());
-        
+        ret[idx..idx+4].copy_from_slice(&a.to_be_bytes()); idx += 4;
+        ret[idx..idx+4].copy_from_slice(&b.to_be_bytes()); idx += 4;
+        ret[idx..idx+4].copy_from_slice(&c.to_be_bytes()); idx += 4;
+        ret[idx..idx+4].copy_from_slice(&d.to_be_bytes()); idx += 4;
+        ret[idx..idx+4].copy_from_slice(&e.to_be_bytes());
+
         ret
     }
 }

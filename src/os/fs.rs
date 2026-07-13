@@ -5,6 +5,7 @@ use alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::vec;
+use alloc::format;
 
 use crate::wide;
 use crate::os::windows::*;
@@ -76,6 +77,18 @@ impl Path {
 
         let string = String::from_utf16_lossy(&buf[..len as usize]);
         Self::from_str(&string)
+    }
+
+    pub fn normalize_string(&self) -> String {
+        let mut absolute = Path::current().parts;
+        let mut path = self.parts.clone();
+
+        while absolute.len() > 0 && path.len() > 0 && absolute[0] == path[0] {
+            absolute.remove(0);
+            path.remove(0);
+        }
+
+        format!("/{}", path.join("/"))
     }
 
     pub fn to_utf16_string(&self) -> Vec<u16> {

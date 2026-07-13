@@ -14,13 +14,13 @@ pub fn init() -> NoResult {
     
     fs::set_file_attribute(
         ".git", 
-        fs::FILE_ATTRIBUTE_HIDDEN | fs::FILE_ATTRIBUTE_READONLY
+        fs::FILE_ATTRIBUTE_HIDDEN
     )?;
 
     // Create Dirs
-    fs::create_dir(".git/ref")?;              // refs
-    fs::create_dir(".git/ref/heads")?;        // refs/heads
-    fs::create_dir(".git/ref/tags")?;         // refs/tags
+    fs::create_dir(".git/refs")?;              // refs
+    fs::create_dir(".git/refs/heads")?;        // refs/heads
+    fs::create_dir(".git/refs/tags")?;         // refs/tags
     fs::create_dir(".git/objects")?;          // objects
     fs::create_dir(".git/objects/info")?;     // objects/info
     fs::create_dir(".git/objects/pack")?;     // objects/pack

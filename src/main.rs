@@ -23,6 +23,7 @@ mod glob;
 mod sync;
 mod args;
 mod blob;
+mod indx;
 
 extern crate alloc;
 
@@ -69,7 +70,7 @@ extern "C" fn main() -> i32 {
 
     let args = env::args();
 
-    let mut parser = ArgsParser::new("fen", "Пример парсера");
+    let mut parser = ArgsParser::new("fen", "git client in rust");
     parser.add_arg("version", Some('v'), false);
     parser.add_arg("exec-path", Some('p'), false);
 
@@ -91,6 +92,7 @@ fn handler(parser: ArgsParser) -> NoResult {
         Some(sub) => {
             return match sub.as_str() {
                 "init" => actions::init(),
+                "add"  => actions::add(&parsed.nn[..]),
                 _ => Err(format!("`{sub}` not a fen command").into())
             };
         },

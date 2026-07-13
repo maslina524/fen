@@ -25,7 +25,6 @@ pub fn write_blob<T: Into<Path>>(path: T) -> error::Result<[u8; 20]> {
     let mut buf = Vec::new();
     zlib::compress(&raw_buf, &mut buf);
 
-    println!("{hash}");
     let save_path = Path::current().join(".git").join("objects").join(&hash[..2]).join(&hash[2..]);
     fs::create_file_all(save_path, &buf[..], buf.len())?;
     

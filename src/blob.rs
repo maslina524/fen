@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use alloc::string::String;
 use alloc::format;
 
 use crate::os::error;
@@ -7,7 +8,8 @@ use crate::sha1::Sha1;
 use crate::zlib;
 use crate::println;
 
-pub fn write_blob(path: Path) -> error::Result<()> {
+pub fn write_blob<T: Into<Path>>(path: T) -> error::Result<[u8; 20]> {
+    let path = path.into();
     let mut raw_buf = Vec::new();
     let file_content = fs::read_to_bytes(&path)?;
     let header = format!("blob {}", file_content.len());
@@ -27,5 +29,5 @@ pub fn write_blob(path: Path) -> error::Result<()> {
     let save_path = Path::current().join(".git").join("objects").join(&hash[..2]).join(&hash[2..]);
     fs::create_file_all(save_path, &buf[..], buf.len())?;
     
-    Ok(())
+    Ok(hasher.bytes())
 }

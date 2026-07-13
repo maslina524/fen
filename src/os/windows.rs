@@ -30,6 +30,8 @@ link!("kernel32" "system" fn FormatMessageW(dwflags : FORMAT_MESSAGE_OPTIONS, lp
 link!("kernel32" "system" fn GetCommandLineW() -> PCWSTR);
 link!("kernel32" "system" fn GetCurrentDirectoryW(nbufferlength : u32, lpbuffer : PWSTR) -> u32);
 link!("kernel32" "system" fn GetFileAttributesW(lpfilename : PCWSTR) -> u32);
+link!("kernel32" "system" fn GetFileSizeEx(hfile : HANDLE, lpfilesize : *mut i64) -> BOOL);
+link!("kernel32" "system" fn GetFileTime(hfile : HANDLE, lpcreationtime : *mut FILETIME, lplastaccesstime : *mut FILETIME, lplastwritetime : *mut FILETIME) -> BOOL);
 link!("kernel32" "system" fn GetFullPathNameW(lpfilename : PCWSTR, nbufferlength : u32, lpbuffer : PWSTR, lpfilepart : *mut PWSTR) -> u32);
 link!("kernel32" "system" fn GetLastError() -> WIN32_ERROR);
 link!("kernel32" "system" fn GetModuleFileNameW(hmodule : HMODULE, lpfilename : PWSTR, nsize : u32) -> u32);

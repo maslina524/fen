@@ -1,13 +1,14 @@
 use core::ffi::c_void;
 
 use crate::os::windows::*;
-use crate::sync::OnceLock;
+use crate::sync::{Mutex, OnceLock};
 
 const CP_UTF8: u32 = 65001;
 const INVALID_HANDLE_VALUE: *mut c_void = -1 as isize as *mut c_void;
 const STDOUT_HANDLE: u32 = 0xFFFFFFF5;
 const STDERR_HANDLE: u32 = 0xFFFFFFF4;
 
+static PRINT_LOCK: Mutex = Mutex::new();
 static IO_PTR: OnceLock<Io> = OnceLock::new();
 
 pub fn get_io() -> &'static Io {
@@ -40,6 +41,7 @@ impl Io {
     }
 
     pub fn raw_print(&self, handle: HANDLE, string: &str) -> u32 {
+        PRINT_LOCK.lock();
         let in_buf = string.as_bytes();
         let mut written = 0;
 
@@ -51,6 +53,7 @@ impl Io {
             core::ptr::null_mut()
         ) };
 
+        PRINT_LOCK.unlock();
         written
     }
 
@@ -69,6 +72,7 @@ unsafe impl Sync for Io {}
 macro_rules! print {
     () => {};
     ($($tt:tt)*) => {
+        PRINT_LOCK.lock();
         $crate::os::io::get_io().print(&alloc::format!($($tt)*));
     }
 }
@@ -79,8 +83,7 @@ macro_rules! println {
         $crate::io::get_io().print("\n");
     };
     ($($tt:tt)*) => {
-        $crate::os::io::get_io().print(&alloc::format!($($tt)*));
-        $crate::os::io::get_io().print("\n");
+        $crate::os::io::get_io().print(&alloc::format!("{}\n", alloc::format!($($tt)*)));
     }
 }
 
@@ -98,7 +101,6 @@ macro_rules! eprintln {
         $crate::io::get_io().eprint("\n");
     };
     ($($tt:tt)*) => {
-        $crate::os::io::get_io().eprint(&alloc::format!($($tt)*));
-        $crate::os::io::get_io().eprint("\n");
+        $crate::os::io::get_io().eprint(&alloc::format!("{}\n", alloc::format!($($tt)*)));
     }
 }

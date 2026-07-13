@@ -1,5 +1,6 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
+#![allow(unused)]
 
 pub type NoResult = Result<(), Box<dyn core::error::Error>>;
 
@@ -107,8 +108,6 @@ mod tests {
 
     #[test]
     fn zlib_compress() {
-        io::set_console_to_utf8();
-
         let string: Vec<u8> = "Hello World!".bytes().collect();
 
         let mut encoded = Vec::new();

@@ -6,6 +6,7 @@ const INCOMPLETE: u8 = 0;
 const INITIALIZING: u8 = 1;
 const READY: u8 = 2;
 
+#[derive(Debug)]
 pub struct OnceLock<T> {
     state: AtomicU8,
     value: UnsafeCell<MaybeUninit<T>> 
@@ -47,6 +48,7 @@ impl<T> OnceLock<T> {
 
 unsafe impl<T: Sync> Sync for OnceLock<T> {}
 
+#[derive(Debug)]
 pub struct Mutex {
     active: AtomicBool
 }
@@ -57,7 +59,7 @@ impl Mutex {
     }
 
     pub fn lock(&self) {
-        while self.active.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {
+        while self.active.compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {
             core::hint::spin_loop();
         }
     }

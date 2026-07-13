@@ -22,6 +22,7 @@ mod sha1;
 mod glob;
 mod sync;
 mod args;
+mod blob;
 
 extern crate alloc;
 
@@ -109,6 +110,7 @@ fn handler(parser: ArgsParser) -> NoResult {
 #[cfg(test)]
 mod tests {
     use crate::io;
+    use crate::os::fs;
     use crate::zlib;
     
     extern crate std;
@@ -143,5 +145,14 @@ mod tests {
         zlib::decompress(encoded, &mut decoded);
         
         assert_eq!(string, decoded)
+    }
+
+    #[test]
+    fn read_file() {
+        let result = fs::read_to_bytes("src/main.rs");
+        assert!(result.is_ok());
+
+        let content = String::from_utf8(result.unwrap()).unwrap();
+        println!("{content}")
     }
 }

@@ -1,7 +1,8 @@
-use crate::{NoResult, toml};
+use alloc::string::ToString;
+
 use crate::os::error::ErrorType;
-use crate::os::fs::{self, *};
-use crate::alloc::string::ToString;
+use crate::os::fs;
+use crate::{NoResult, toml};
 
 pub fn init() -> NoResult {
     if let Err(e) = fs::create_dir(".git") {
@@ -13,7 +14,7 @@ pub fn init() -> NoResult {
     
     fs::set_file_attribute(
         ".git", 
-        FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_READONLY
+        fs::FILE_ATTRIBUTE_HIDDEN | fs::FILE_ATTRIBUTE_READONLY
     )?;
 
     // Create Dirs

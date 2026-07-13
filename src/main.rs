@@ -4,9 +4,14 @@
 
 pub type NoResult = Result<(), Box<dyn core::error::Error>>;
 
-use alloc::{boxed::Box, format};
+use alloc::collections::*;
+use alloc::collections::BTreeMap;
+use alloc::boxed::Box;
+use alloc::format;
 
 use crate::os::io;
+use crate::os::env;
+use crate::args::ArgsParser;
 
 mod os;
 mod actions;
@@ -16,6 +21,7 @@ mod toml;
 mod sha1;
 mod glob;
 mod sync;
+mod args;
 
 extern crate alloc;
 
@@ -51,33 +57,53 @@ fn exec_path() -> NoResult {
     Ok(())
 }
 
+/// If this cfg is used rust-analyzer will not process this function
+/// and if the cfg is commented out running cargo test will cause an
+/// entry point err idk how to fix this so the attr is commented out
+/// when you need to run the test you have to uncomment the attr
 #[cfg(not(test))]
 #[unsafe(no_mangle)]
 extern "C" fn main() -> i32 {
     io::set_console_to_utf8();
 
-    let argv = os::env::args();
-    let action = match argv.get(1) {
-        Some(arg) => arg,
-        None => return 1
-    };
+    let args = env::args();
 
-    let raw_argv = &argv[2..];
+    let mut parser = ArgsParser::new("fen", "Пример парсера");
+    parser.add_arg("version", Some('v'), false);
+    parser.add_arg("exec-path", Some('p'), false);
 
-    let result: NoResult = match action.as_str() {
-        "version" | "--version" => version(),
-        "--exec-path" => exec_path(),
-        "init" => actions::init(),
-        "add" => actions::add(raw_argv),
-        _ => Err(format!("unknown command `{action}`").into())
-    };
+    let parsed = parser.parse(&args[1..]);
 
-    if let Err(err) = result {
+    if let Err(err) = handler(parser) {
         eprintln!("Fen: {err}");
         return 1;
     }
 
     return 0;
+}
+
+fn handler(parser: ArgsParser) -> NoResult {
+    let args = &env::args()[1..];
+    let parsed = parser.parse(args)?;
+
+    match parsed.action {
+        Some(sub) => {
+            return match sub.as_str() {
+                "init" => actions::init(),
+                _ => Err(format!("`{sub}` not a fen command").into())
+            };
+        },
+        None => {
+            return if parsed.map.contains_key("version") {
+                version()
+            } else if parsed.map.contains_key("exec-path") {
+                exec_path()
+            } else {
+                Err("help page".into())
+            };
+        }
+    };
+    Ok(())
 }
 
 #[cfg(test)]

@@ -23,7 +23,7 @@ pub struct ArgsParser {
 pub struct ArgResult {
     pub map: BTreeMap<String, String>,
     pub nn: Vec<String>,
-    pub action: String
+    pub action: Option<String>
 }
 
 impl ArgsParser {
@@ -46,7 +46,7 @@ impl ArgsParser {
     pub fn parse(&self, args: &[String]) -> Result<ArgResult, String> {
         let mut map = BTreeMap::new();
         let mut nn = Vec::new();
-        let mut action = String::new();
+        let mut action = None;
         let mut action_set = false;
         let mut stop_parsing = false;
         let mut i = 0;
@@ -137,7 +137,7 @@ impl ArgsParser {
             }
 
             if !action_set {
-                action = arg.clone();
+                action = Some(arg.clone());
                 action_set = true;
             } else {
                 nn.push(arg.clone());

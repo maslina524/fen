@@ -364,8 +364,10 @@ pub fn read_to_bytes<T: Into<Path>>(path: T) -> error::Result<Vec<u8>> {
 #[derive(Debug, Clone, Default)]
 pub struct FileInfo {
     pub size: u64,
-    pub created: u64,
-    pub modified: u64
+    pub ctime_sec: u32,
+    pub ctime_nsec: u32,
+    pub mtime_sec: u32,
+    pub mtime_nsec: u32,
 }
 
 pub fn get_file_info<T: Into<Path>>(path: T) -> error::Result<FileInfo> {
@@ -400,14 +402,21 @@ pub fn get_file_info<T: Into<Path>>(path: T) -> error::Result<FileInfo> {
         &mut modified_win
     ) };
 
-    let crated = win_time_to_unix(created_win);
-    let modified = win_time_to_unix(modified_win);
+    let crated = win_time_to_sec_and_nsec(created_win);
+    let modified = win_time_to_sec_and_nsec(modified_win);
 
     Ok(FileInfo::default())
 }
 
-fn win_time_to_unix(time: FILETIME) -> u64 {
-    let time = ((time.dwHighDateTime as u64) << 32) + time.dwLowDateTime as u64;
-    let timestamp = time / 10000000 - 11644473600;
-    timestamp
+fn win_time_to_sec_and_nsec(ft: FILETIME) -> (u32, u32) {
+    let ft_64 = ((ft.dwHighDateTime as u64) << 32) | (ft.dwLowDateTime as u64);
+    
+    const EPOCH_DIFF_100NS: u64 = 11_644_473_600_000_000;
+    
+    let utc_100ns = ft_64 - EPOCH_DIFF_100NS;
+    
+    let sec = utc_100ns / 10_000_000;
+    let nsec = (utc_100ns % 10_000_000) * 100;
+    
+    (sec as u32, nsec as u32)
 }

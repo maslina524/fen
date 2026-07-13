@@ -118,6 +118,24 @@ impl From<&str> for Path {
     }
 }
 
+impl From<String> for Path {
+    fn from(s: String) -> Self {
+        Path::from_str(s.as_str())
+    }
+}
+
+impl From<&String> for Path {
+    fn from(s: &String) -> Self {
+        Path::from_str(s.as_str())
+    }
+}
+
+impl From<&Path> for Path {
+    fn from(s: &Path) -> Self {
+        s.to_owned()
+    }
+}
+
 pub fn create_dir<T: Into<Path>>(path: T) -> error::Result<()> {
     let wide = path.into().to_utf16_string();
 
@@ -187,6 +205,28 @@ pub fn create_file<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error:
     }
 
     Ok(())
+}
+
+pub fn create_file_all<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error::Result<()> {
+    let path = path.into();
+    let parts = &path.parts;
+
+    if parts.len() > 1 {
+        let mut temp_path = String::new();
+        for part in &parts[0..parts.len() - 1] {
+            temp_path.push_str(part);
+            temp_path.push('\\');
+
+            if !exists(&temp_path) {
+                if let Err(e) = create_dir(&temp_path) {
+                    if e.code() != 183 {
+                        return Err(e);
+                    }
+                }
+            }
+        }
+    }
+    create_file(path, content, len)
 }
 
 pub fn exists<T: Into<Path>>(path: T) -> bool {

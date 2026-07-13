@@ -16,9 +16,11 @@ const INVALID_FILE_ATTRIBUTES: u32 = 0xFFFFFFFF;
 
 const GENERIC_WRITE: u32 = 0x40000000;
 const GENERIC_READ: u32 = 0x80000000;
+const FILE_READ_ATTRIBUTES: u32 = 0x80;
 
 const FILE_SHARE_READ: u32 = 0x00000001;
 const FILE_SHARE_WRITE: u32 = 0x00000002;
+const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x02000000;
 
 const CREATE_ALWAYS: u32 = 2;
 const OPEN_EXISTING: u32 = 3;
@@ -357,4 +359,55 @@ pub fn read_to_bytes<T: Into<Path>>(path: T) -> error::Result<Vec<u8>> {
     
 
     Ok(content)
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct FileInfo {
+    pub size: u64,
+    pub created: u64,
+    pub modified: u64
+}
+
+pub fn get_file_info<T: Into<Path>>(path: T) -> error::Result<FileInfo> {
+    let path_wide = path.into().to_utf16_string();
+
+    let handle = unsafe { CreateFileW(
+        path_wide.as_ptr(), 
+        FILE_READ_ATTRIBUTES, 
+        FILE_SHARE_READ | FILE_SHARE_WRITE, 
+        core::ptr::null(), 
+        OPEN_EXISTING, 
+        FILE_FLAG_BACKUP_SEMANTICS, 
+        core::ptr::null_mut()
+    ) };
+    if handle == INVALID_HANDLE_VALUE {
+        let error = ErrorCode::last();
+        return Err(error);
+    }
+
+    let mut size = 0;
+    if (unsafe { GetFileSizeEx(handle, &mut size) }) == 0 {
+        let error = ErrorCode::last();
+        return Err(error);
+    }
+
+    let mut created_win = unsafe { core::mem::zeroed() };
+    let mut modified_win = unsafe { core::mem::zeroed() };
+    let ret = unsafe { GetFileTime(
+        handle,
+        &mut created_win, 
+        core::ptr::null_mut(), 
+        &mut modified_win
+    ) };
+
+    let crated = win_time_to_unix(created_win);
+    let modified = win_time_to_unix(modified_win);
+
+    Ok(FileInfo::default())
+}
+
+fn win_time_to_unix(time: FILETIME) -> u64 {
+    let time = ((time.dwHighDateTime as u64) << 32) + time.dwLowDateTime as u64;
+    let timestamp = time / 10000000 - 11644473600;
+    timestamp
 }

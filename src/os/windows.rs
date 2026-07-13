@@ -38,6 +38,7 @@ link!("kernel32" "system" fn GetStdHandle(nstdhandle : STD_HANDLE) -> HANDLE);
 link!("kernel32" "system" fn HeapAlloc(hheap : HANDLE, dwflags : HEAP_FLAGS, dwbytes : usize) -> *mut core::ffi::c_void);
 link!("kernel32" "system" fn HeapFree(hheap : HANDLE, dwflags : HEAP_FLAGS, lpmem : *const core::ffi::c_void) -> BOOL);
 link!("shlwapi" "system" fn PathFileExistsW(pszpath : PCWSTR) -> BOOL);
+link!("kernel32" "system" fn ReadFile(hfile : HANDLE, lpbuffer : *mut u8, nnumberofbytestoread : u32, lpnumberofbytesread : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);
 link!("kernel32" "system" fn SetConsoleOutputCP(wcodepageid : u32) -> BOOL);
 link!("kernel32" "system" fn SetFileAttributesW(lpfilename : PCWSTR, dwfileattributes : FILE_FLAGS_AND_ATTRIBUTES) -> BOOL);
 link!("kernel32" "system" fn WriteFile(hfile : HANDLE, lpbuffer : *const u8, nnumberofbytestowrite : u32, lpnumberofbyteswritten : *mut u32, lpoverlapped : *mut OVERLAPPED) -> BOOL);

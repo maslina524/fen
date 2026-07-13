@@ -14,11 +14,13 @@ const INVALID_HANDLE_VALUE: *mut c_void = -1 as isize as *mut c_void;
 const INVALID_FILE_ATTRIBUTES: u32 = 0xFFFFFFFF;
 
 const GENERIC_WRITE: u32 = 0x40000000;
+const GENERIC_READ: u32 = 0x80000000;
 
 const FILE_SHARE_READ: u32 = 0x00000001;
 const FILE_SHARE_WRITE: u32 = 0x00000002;
 
 const CREATE_ALWAYS: u32 = 2;
+const OPEN_EXISTING: u32 = 3;
 
 const FILE_ATTRIBUTE_DIRECTORY: u32 = 0x00000010;
 
@@ -262,4 +264,44 @@ fn get_name_from_buf(name_buf: &[u16]) -> String {
     let name = String::from_utf16_lossy(&name_buf[..len]);
 
     return name;
+}
+
+pub fn read_to_bytes<T: Into<Path>>(path: T) -> error::Result<Vec<u8>> {
+    let path_wide = path.into().to_utf16_string();
+
+    let handle = unsafe { CreateFileW(
+        path_wide.as_ptr(), 
+        GENERIC_READ, 
+        FILE_SHARE_READ, 
+        core::ptr::null(), 
+        OPEN_EXISTING, 
+        0, 
+        core::ptr::null_mut()
+    ) };
+    if handle == INVALID_HANDLE_VALUE {
+        let error = ErrorCode::last();
+        return Err(error);
+    }
+
+    let mut content = Vec::new();
+    let mut buf = [0u8; 1024];
+    let mut written = 1;
+    loop {
+        let ret = unsafe { ReadFile(
+            handle, 
+            buf.as_mut_ptr() as *mut u8,
+            1024,
+            &mut written,
+            core::ptr::null_mut()
+        ) };
+        if ret == 0 {
+            let error = ErrorCode::last();
+            return Err(error);
+        }
+        if written == 0 { break; }
+        content.extend(&buf[..written as usize]);
+    }
+    
+
+    Ok(content)
 }

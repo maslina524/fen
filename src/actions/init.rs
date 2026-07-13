@@ -20,12 +20,13 @@ pub fn init() -> NoResult {
     // Create Dirs
     fs::create_dir(".git/refs")?;              // refs
     fs::create_dir(".git/refs/heads")?;        // refs/heads
+    fs::create_dir(".git/refs/heads/master")?; // refs/heads/master
     fs::create_dir(".git/refs/tags")?;         // refs/tags
-    fs::create_dir(".git/objects")?;          // objects
-    fs::create_dir(".git/objects/info")?;     // objects/info
-    fs::create_dir(".git/objects/pack")?;     // objects/pack
-    fs::create_dir(".git/hooks")?;            // hooks
-    fs::create_dir(".git/info")?;             // info
+    fs::create_dir(".git/objects")?;           // objects
+    fs::create_dir(".git/objects/info")?;      // objects/info
+    fs::create_dir(".git/objects/pack")?;      // objects/pack
+    fs::create_dir(".git/hooks")?;             // hooks
+    fs::create_dir(".git/info")?;              // info
 
     // info/exclude
     fs::create_file(".git/info/exclude", b"", 0)?;

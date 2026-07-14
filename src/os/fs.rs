@@ -119,6 +119,10 @@ impl Path {
         }
         (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0
     }
+
+    pub fn pop(&mut self) -> Option<String> {
+        self.parts.pop()
+    }
 }
 
 impl core::fmt::Display for Path {

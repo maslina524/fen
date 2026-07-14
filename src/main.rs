@@ -107,7 +107,7 @@ fn handler(parser: ArgsParser) -> NoResult {
             } else if parsed.map.contains_key("exec-path") {
                 exec_path()
             } else {
-                Err("help page".into())
+                actions::help(None)
             };
         }
     };

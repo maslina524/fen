@@ -25,6 +25,7 @@ mod args;
 mod blob;
 mod indx;
 mod tree;
+mod commit;
 
 extern crate alloc;
 
@@ -125,7 +126,7 @@ mod tests {
     fn zlib_decompress() {
         io::set_console_to_utf8();
 
-        let string = std::fs::read(".git/objects/e3/c310b8a4e65d316bb5f51f8e53bc47232f817e").unwrap();
+        let string = std::fs::read(".git/objects/32/d7e129e6685b5bb82844f81bf4fd692d0091be").unwrap();
         let mut decoded = Vec::new();
         zlib::decompress(string, &mut decoded);
 

@@ -4,7 +4,7 @@ use alloc::string::{ToString, String};
 use alloc::format;
 
 use crate::os::env;
-use crate::os::fs::{self, Path};
+use crate::os::fs::{self, Path, create_file};
 use crate::os::error;
 use crate::sha1::Sha1;
 use crate::zlib;
@@ -28,6 +28,21 @@ pub fn get_head() -> Result<Option<[u8; 40]>, Box<dyn core::error::Error>> {
 
     let ret = head_bytes.try_into().map_err(|_| "HEAD hash corrupted")?;
     Ok(Some(ret))
+}
+
+pub fn set_head(hash: &Sha1) -> Result<(), Box<dyn core::error::Error>> {
+    let head_path_bytes = fs::read_to_bytes(".git/HEAD")?;
+    let head_path_raw = String::from_utf8(head_path_bytes)?;
+    if !head_path_raw.starts_with("ref: ") {
+        return Err("HEAD file corrupted".into());
+    }
+
+    let head_path = format!(".git/{}", &head_path_raw[5..]);
+    let hex_hash = hash.hex();
+    let content = hex_hash.as_bytes();
+    fs::create_file_all(head_path.trim(), content, content.len())?;
+
+    Ok(())
 }
 
 pub fn write_commit(tree: &Sha1, msg: &str) -> Result<Sha1, Box<dyn core::error::Error>> {
@@ -56,7 +71,7 @@ pub fn write_commit(tree: &Sha1, msg: &str) -> Result<Sha1, Box<dyn core::error:
     body.extend(format!("commiter {NAME} <{EMAIL}> {timestamp} {tz}\n\n").as_bytes());
 
     // Message
-    body.extend(format!("{msg}").as_bytes());
+    body.extend(format!("{msg}\n").as_bytes());
 
     let mut raw = Vec::with_capacity(body.len() + 12);
     raw.extend(b"commit ");
@@ -75,6 +90,7 @@ pub fn write_commit(tree: &Sha1, msg: &str) -> Result<Sha1, Box<dyn core::error:
     fs::create_file_all(&save_path, &buf[..], buf.len())?;
 
     crate::println!("commit hash: {}", hash);
+    set_head(&hasher)?;
 
     Ok( hasher )
 } 

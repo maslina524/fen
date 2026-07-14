@@ -52,7 +52,7 @@ pub fn timestamp() -> u64 {
     let mut time = unsafe { core::mem::zeroed() };
     unsafe { GetSystemTimeAsFileTime(&mut time) };
 
-    let u64_time = (time.dwHighDateTime as u64) << 32 + time.dwLowDateTime as u64;
+    let u64_time = ((time.dwHighDateTime as u64) << 32) | time.dwLowDateTime as u64;
     let timestamp = (u64_time - 116_444_736_000_000_000) / 10_000_000;
     timestamp
 }

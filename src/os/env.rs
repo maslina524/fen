@@ -1,5 +1,6 @@
 use alloc::string::String;
 use alloc::vec::Vec;
+use alloc::format;
 
 use crate::os::error::ErrorCode;
 use crate::os::windows::*;
@@ -70,4 +71,29 @@ pub fn get_time_zone() -> i16 {
     }
 
     (-bias_mins) as i16
+}
+
+pub fn get_time_zone_string() -> String {
+    let mut tz = get_time_zone();
+    let symb = if tz < 0 { '-' } else { '+' };
+    tz = tz.abs();
+    let hours = tz / 60;
+    let mins = tz % 60;
+
+    format!("{symb}{hours:02}{mins:02}")
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::os::io;
+    use crate::os::env;
+    
+    extern crate std;
+
+    #[test]
+    fn time_zone_string() {
+        io::set_console_to_utf8();
+        let string = env::get_time_zone_string();
+        crate::println!("{string}");
+    }
 }

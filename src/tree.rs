@@ -15,7 +15,7 @@ struct TreeEntry {
     hash: [u8; 20],
 }
 
-pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> Result<[u8; 20], Box<dyn core::error::Error>> {
+pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> Result<Sha1, Box<dyn core::error::Error>> {
     let mut file_entries = Vec::new();
     let mut dir_prefixes = Vec::new();
     let prefix_with_slash = if prefix.is_empty() { String::new() } else { format!("{}/", prefix) };
@@ -49,7 +49,7 @@ pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> Result<[u8; 20], Bo
         tree_entries.push(TreeEntry {
             mode: 0o40000,
             name: dir_name.to_owned(),
-            hash,
+            hash: hash.bytes(),
         });
     }
 
@@ -89,7 +89,7 @@ pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> Result<[u8; 20], Bo
     let save_path = Path::current().join(".git").join("objects").join(&hash[..2]).join(&hash[2..]);
     fs::create_file_all(save_path, &buf[..], buf.len())?;
 
-    crate::println!("{:#?}", String::from_utf8(raw));
+    crate::println!("tree hash: {}", hash);
 
-    Ok(hasher.bytes())
+    Ok( hasher )
 }

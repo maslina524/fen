@@ -338,7 +338,7 @@ pub fn read_to_bytes<T: Into<Path>>(path: T) -> error::Result<Vec<u8>> {
         core::ptr::null_mut()
     ) };
     if handle == INVALID_HANDLE_VALUE {
-        let error = ErrorCode::last();
+        let error = ErrorCode::last().panic();
         return Err(error);
     }
 

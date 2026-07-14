@@ -8,7 +8,7 @@ use crate::sha1::Sha1;
 use crate::zlib;
 use crate::println;
 
-pub fn write_blob<T: Into<Path>>(path: T) -> error::Result<[u8; 20]> {
+pub fn write_blob<T: Into<Path>>(path: T) -> error::Result<Sha1> {
     let path = path.into();
     let mut raw_buf = Vec::new();
     let file_content = fs::read_to_bytes(&path)?;
@@ -28,5 +28,5 @@ pub fn write_blob<T: Into<Path>>(path: T) -> error::Result<[u8; 20]> {
     let save_path = Path::current().join(".git").join("objects").join(&hash[..2]).join(&hash[2..]);
     fs::create_file_all(save_path, &buf[..], buf.len())?;
     
-    Ok(hasher.bytes())
+    Ok( hasher )
 }

@@ -20,6 +20,10 @@ impl Sha1 {
         }
     }
 
+    pub fn from_bytes(bytes: &[u8; 20]) {
+        
+    }
+
     pub fn encrypt(&mut self, content: &[u8]) {
         let stream = self.padding(content);
         let stream = self.prepare(&stream);

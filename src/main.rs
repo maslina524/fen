@@ -126,7 +126,7 @@ mod tests {
     fn zlib_decompress() {
         io::set_console_to_utf8();
 
-        let string = std::fs::read(".git/objects/32/d7e129e6685b5bb82844f81bf4fd692d0091be").unwrap();
+        let string = std::fs::read("C:/Users/lukki/Documents/fen-test/.git/objects/4c/0a5d237444d2cd3d34f661f4112f29ff7e612d").unwrap();
         let mut decoded = Vec::new();
         zlib::decompress(string, &mut decoded);
 

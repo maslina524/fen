@@ -4,6 +4,7 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
+#[derive(Debug, Clone)]
 pub enum TomlValue {
     Number(f64),
     String(String),
@@ -19,6 +20,30 @@ impl TomlValue {
         } else {
             Self::String(string.to_owned())
         };
+    }
+
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            Self::Bool(v) => Some(*v),
+            Self::Number(_) => None,
+            Self::String(_) => None,
+        }
+    }
+
+    pub fn as_num(&self) -> Option<f64> {
+        match self {
+            Self::Bool(_) => None,
+            Self::Number(v) => Some(*v),
+            Self::String(_) => None,
+        }
+    }
+
+    pub fn as_str(&self) -> Option<String> {
+        match self {
+            Self::Bool(_) => None,
+            Self::Number(_) => None,
+            Self::String(v) => Some(v.to_owned()),
+        }
     }
 }
 
@@ -37,6 +62,7 @@ pub type Category<K, V> = BTreeMap<K, V>;
 pub type Value<K, V> = BTreeMap<K, V>;
 pub type TomlType = Category<Name, Value<Name, TomlValue>>;
 
+#[derive(Debug, Clone)]
 pub struct Toml {
     pub map: TomlType
 }
@@ -48,6 +74,10 @@ impl Toml {
 
     pub fn from_map(map: TomlType) -> Self {
         Self { map }
+    }
+
+    pub fn get(&self, name: &str) -> Option<&Value<String, TomlValue>> {
+        self.map.get(name)
     }
 
     pub fn from_str(string: &str) -> Option<Self> {
@@ -72,6 +102,9 @@ impl Toml {
 
                 curr_cat.insert(k, TomlValue::from(v));
             }
+        }
+        if !curr_cat.is_empty() {
+            map.insert(curr_name, curr_cat);
         }
 
         Some(

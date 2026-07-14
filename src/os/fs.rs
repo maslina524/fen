@@ -366,6 +366,13 @@ pub fn read_to_bytes<T: Into<Path>>(path: T) -> error::Result<Vec<u8>> {
     Ok(content)
 }
 
+pub fn read_to_string<T: Into<Path>>(path: T) -> error::Result<String> {
+    let content = read_to_bytes(path)?;
+    let string = String::from_utf8(content).unwrap();
+
+    Ok(string)
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct FileInfo {
     pub size: u32,

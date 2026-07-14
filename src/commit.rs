@@ -13,8 +13,7 @@ const NAME: &str = "temp_name";
 const EMAIL: &str = "example@gmail.com";
 
 pub fn get_head() -> Result<Option<[u8; 40]>, Box<dyn core::error::Error>> {
-    let head_path_bytes = fs::read_to_bytes(".git/HEAD")?;
-    let head_path_raw = String::from_utf8(head_path_bytes)?;
+    let head_path_raw = fs::read_to_string(".git/HEAD")?;
     if !head_path_raw.starts_with("ref: ") {
         return Err("HEAD file corrupted".into());
     }
@@ -31,8 +30,7 @@ pub fn get_head() -> Result<Option<[u8; 40]>, Box<dyn core::error::Error>> {
 }
 
 pub fn set_head(hash: &Sha1) -> Result<(), Box<dyn core::error::Error>> {
-    let head_path_bytes = fs::read_to_bytes(".git/HEAD")?;
-    let head_path_raw = String::from_utf8(head_path_bytes)?;
+    let head_path_raw = fs::read_to_string(".git/HEAD")?;
     if !head_path_raw.starts_with("ref: ") {
         return Err("HEAD file corrupted".into());
     }

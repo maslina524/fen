@@ -83,6 +83,22 @@ pub fn get_time_zone_string() -> String {
     format!("{symb}{hours:02}{mins:02}")
 }
 
+pub fn get_user_name() -> String {
+    let mut buf = [0u16; 256];
+    let mut size = 0;
+
+    let ret = unsafe { GetUserNameW(
+        buf.as_mut_ptr() as *mut u16, 
+        &mut size
+    ) };
+    if ret == 0 {
+        ErrorCode::last().panic()
+    }
+
+    let string = String::from_utf16_lossy(&buf[..size as usize]);
+    string
+}
+
 #[cfg(test)]
 mod tests {
     use crate::os::io;

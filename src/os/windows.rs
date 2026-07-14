@@ -37,6 +37,8 @@ link!("kernel32" "system" fn GetLastError() -> WIN32_ERROR);
 link!("kernel32" "system" fn GetModuleFileNameW(hmodule : HMODULE, lpfilename : PWSTR, nsize : u32) -> u32);
 link!("kernel32" "system" fn GetProcessHeap() -> HANDLE);
 link!("kernel32" "system" fn GetStdHandle(nstdhandle : STD_HANDLE) -> HANDLE);
+link!("kernel32" "system" fn GetSystemTimeAsFileTime(lpsystemtimeasfiletime : *mut FILETIME));
+link!("kernel32" "system" fn GetTimeZoneInformation(lptimezoneinformation : *mut TIME_ZONE_INFORMATION) -> u32);
 link!("kernel32" "system" fn HeapAlloc(hheap : HANDLE, dwflags : HEAP_FLAGS, dwbytes : usize) -> *mut core::ffi::c_void);
 link!("kernel32" "system" fn HeapFree(hheap : HANDLE, dwflags : HEAP_FLAGS, lpmem : *const core::ffi::c_void) -> BOOL);
 link!("shlwapi" "system" fn PathFileExistsW(pszpath : PCWSTR) -> BOOL);
@@ -104,6 +106,34 @@ impl Default for SECURITY_ATTRIBUTES {
     }
 }
 pub type STD_HANDLE = u32;
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct SYSTEMTIME {
+    pub wYear: u16,
+    pub wMonth: u16,
+    pub wDayOfWeek: u16,
+    pub wDay: u16,
+    pub wHour: u16,
+    pub wMinute: u16,
+    pub wSecond: u16,
+    pub wMilliseconds: u16,
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct TIME_ZONE_INFORMATION {
+    pub Bias: i32,
+    pub StandardName: [u16; 32],
+    pub StandardDate: SYSTEMTIME,
+    pub StandardBias: i32,
+    pub DaylightName: [u16; 32],
+    pub DaylightDate: SYSTEMTIME,
+    pub DaylightBias: i32,
+}
+impl Default for TIME_ZONE_INFORMATION {
+    fn default() -> Self {
+        unsafe { core::mem::zeroed() }
+    }
+}
 pub type WIN32_ERROR = u32;
 #[repr(C)]
 #[derive(Clone, Copy)]

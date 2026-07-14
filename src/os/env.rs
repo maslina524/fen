@@ -1,7 +1,11 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
+use crate::os::error::ErrorCode;
 use crate::os::windows::*;
+
+const TIME_ZONE_ID_DAYLIGHT: u32 = 2;
+const TIME_ZONE_ID_INVALID: u32 = 0xFFFFFFFF;
 
 pub fn args() -> Vec<String> {
     let ptr = unsafe { GetCommandLineW() };
@@ -41,4 +45,29 @@ pub fn current_exe() -> String {
     let string = String::from_utf16_lossy(slice);
 
     string
+}
+
+pub fn timestamp() -> u64 {
+    let mut time = unsafe { core::mem::zeroed() };
+    unsafe { GetSystemTimeAsFileTime(&mut time) };
+
+    let u64_time = (time.dwHighDateTime as u64) << 32 + time.dwLowDateTime as u64;
+    let timestamp = (u64_time - 116_444_736_000_000_000) / 10_000_000;
+    timestamp
+}
+
+pub fn get_time_zone() -> i16 {
+    let mut tzi = unsafe { core::mem::zeroed() };
+    let ret = unsafe { GetTimeZoneInformation(&mut tzi) };
+    if ret == TIME_ZONE_ID_INVALID {
+        ErrorCode::last().panic()
+    }
+
+    let mut bias_mins = tzi.Bias;
+
+    if ret == TIME_ZONE_ID_DAYLIGHT {
+        bias_mins += tzi.DaylightBias;
+    }
+
+    (-bias_mins) as i16
 }

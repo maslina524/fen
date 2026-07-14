@@ -357,6 +357,7 @@ pub fn read_to_bytes<T: Into<Path>>(path: T) -> error::Result<Vec<u8>> {
         content.extend(&buf[..written as usize]);
     }
     
+    unsafe { CloseHandle(handle) };
 
     Ok(content)
 }
@@ -401,6 +402,8 @@ pub fn get_file_info<T: Into<Path>>(path: T) -> error::Result<FileInfo> {
         core::ptr::null_mut(), 
         &mut modified_win
     ) };
+
+    unsafe { CloseHandle(handle) };
 
     let (ctime_sec, ctime_nsec) = win_time_to_sec_and_nsec(created_win);
     let (mtime_sec, mtime_nsec) = win_time_to_sec_and_nsec(modified_win);

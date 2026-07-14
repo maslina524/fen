@@ -85,7 +85,7 @@ pub fn get_time_zone_string() -> String {
 
 pub fn get_user_name() -> String {
     let mut buf = [0u16; 256];
-    let mut size = 0;
+    let mut size = 256;
 
     let ret = unsafe { GetUserNameW(
         buf.as_mut_ptr() as *mut u16, 

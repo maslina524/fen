@@ -113,7 +113,7 @@ pub fn decode_trees(stream: &mut Stream) -> (HuffmanTree, HuffmanTree) {
         }
     }
 
-    let literal_count = core::cmp::min(hlit as usize, 286);
+    let literal_count = core::cmp::min(hlit as usize, 288);
     let literal_alphabet: Vec<u32> = (0..literal_count as u32).collect();
     let literal_len_tree = HuffmanTree::from_alphabet_and_bl_list(
         &literal_alphabet,

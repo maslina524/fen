@@ -54,7 +54,7 @@ fn get_fixed_literal_length_codes() -> BTreeMap<u16, (u32, u8)> {
     for _ in 280..288 {
         bl.push(8);
     }
-    bl.truncate(286);
+    bl.truncate(288);
     compute_codes(&bl)
 }
 

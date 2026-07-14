@@ -96,9 +96,10 @@ fn handler(parser: ArgsParser) -> NoResult {
     match parsed.action {
         Some(sub) => {
             return match sub.as_str() {
-                "init"   => actions::init(),
-                "add"    => actions::add(&parsed.nn[..]),
-                "commit" => actions::commit(parsed.map.get("message")),
+                "init"    => actions::init(),
+                "add"     => actions::add(&parsed.nn[..]),
+                "commit"  => actions::commit(parsed.map.get("message")),
+                "profile" => actions::profile(&parsed.nn),
                 _ => Err(format!("`{sub}` not a fen command").into())
             };
         },

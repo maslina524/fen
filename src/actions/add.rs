@@ -13,7 +13,7 @@ pub fn add(patterns: &[String]) -> NoResult {
     let files = find_files(patterns);
     let mut index = indx::read_index()?;
     for file in files {
-        let sha1 = blob::write_blob(&file)?;
+        let sha1 = blob::write_blob(&file)?.bytes();
         let name = file.normalize_string();
         let mode = 0o100644; // only for windows
 

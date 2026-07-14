@@ -26,6 +26,7 @@ mod blob;
 mod indx;
 mod tree;
 mod commit;
+mod consts;
 
 extern crate alloc;
 

@@ -1,8 +1,13 @@
 use alloc::borrow::ToOwned;
 use alloc::collections::btree_map::BTreeMap;
 use alloc::format;
-use alloc::string::String;
+use alloc::string::{ToString, String};
 use alloc::vec::Vec;
+
+use crate::consts::git_config_path;
+use crate::os::fs;
+use crate::os::windows::*;
+use crate::toml;
 
 #[derive(Debug, Clone)]
 pub enum TomlValue {
@@ -74,6 +79,19 @@ impl Toml {
 
     pub fn from_map(map: TomlType) -> Self {
         Self { map }
+    }
+
+    pub fn open_git_config() -> Option<Self> {
+        if !fs::exists(git_config_path()) {
+            let map = toml!(
+                "user" => { }
+            );
+            fs::create_file_all(git_config_path(), map.to_string().as_bytes());
+            return Some( map );
+        }
+
+        let toml_raw = fs::read_to_string(git_config_path()).ok()?;
+        Toml::from_str(&toml_raw)
     }
 
     pub fn get(&self, name: &str) -> Option<&Value<String, TomlValue>> {

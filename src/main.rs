@@ -75,10 +75,14 @@ extern "C" fn main() -> i32 {
     let args = env::args();
 
     let mut parser = ArgsParser::new("fen", "git client in rust");
-    parser.add_arg("message", Some('m'), true);
-
     parser.add_arg("version", Some('v'), false);
     parser.add_arg("exec-path", Some('p'), false);
+
+    // Add
+    parser.add_arg("show", Some('s'), false);
+
+    // Commit
+    parser.add_arg("message", Some('m'), true);
 
     let parsed = parser.parse(&args[1..]);
 
@@ -96,9 +100,9 @@ fn handler(parser: ArgsParser) -> FenResult<()> {
 
     match parsed.action {
         Some(sub) => {
-            return match sub.as_str() {
+            return match sub.as_str() {  
                 "init"    => actions::init(),
-                "add"     => actions::add(&parsed.nn[..]),
+                "add"     => actions::add(&parsed.nn[..], parsed.map),
                 "commit"  => actions::commit(parsed.map.get("message")),
                 "profile" => actions::profile(&parsed.nn),
                 _ => Err(format!("`{sub}` not a fen command").into())

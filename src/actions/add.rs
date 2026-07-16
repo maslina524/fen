@@ -1,23 +1,25 @@
-use alloc::string::String;
+use alloc::collections::BTreeMap;
+use alloc::string::{ToString, String};
 use alloc::vec::Vec;
 
+use crate::consts::*;
 use crate::{FenResult, blob, glob, indx, println};
 use crate::os::fs::{self, Path};
 use crate::indx::IndexFile;
 
-pub fn add(patterns: &[String]) -> FenResult<()> {
+pub fn add(patterns: &[String], map: BTreeMap<String, String>) -> FenResult<()> {
     if patterns.is_empty() {
         return Err("No file patterns to add to index".into());
     }
 
     let files = find_files(patterns);
     let mut index = indx::read_index()?;
-    for file in files {
-        let sha1 = blob::write_blob(&file)?.bytes();
+    for file in &files {
+        let sha1 = blob::write_blob(file)?.bytes();
         let name = file.normalize_string();
         let mode = 0o100644; // only for windows
 
-        let info = fs::get_file_info(&file)?;
+        let info = fs::get_file_info(file)?;
         let size = info.size as u32;
         let ctime_sec = info.ctime_sec;
         let ctime_nsec = info.ctime_nsec;
@@ -36,6 +38,29 @@ pub fn add(patterns: &[String]) -> FenResult<()> {
     }
 
     indx::write_index(index)?;
+
+    if map.contains_key("show") {
+        for file in &files {
+            let string = file.normalize_string();
+            let extension = {
+                let ext_str = if let Some(dot) = string.rfind(".") {
+                    &string[dot + 1..]
+                } else {
+                    ""
+                };
+
+                if let Some(ext) = extension_colored_icons().get(ext_str) {
+                    ext
+                } else {
+                    FILE_ICON
+                }
+            };
+            println!("{extension} {string}\x1b[0m");
+        }
+        println!();
+    }
+
+    println!("Added {} files", files.len());
 
     Ok(())
 }

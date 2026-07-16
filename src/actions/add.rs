@@ -84,7 +84,7 @@ fn search_recursive(current: &Path, parts: &[&str], results: &mut Vec<Path>) {
 
     for item in items {
         let name = item.name();
-        if glob::glob(part, &name) {
+        if glob::glob(&name, part) {
             let sub_path = current.clone().join(&name);
 
             if rest.is_empty() {

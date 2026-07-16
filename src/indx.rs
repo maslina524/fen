@@ -185,7 +185,7 @@ pub fn write_index(entries: Vec<IndexFile>) -> error::Result<()> {
 
     content.extend(hash);
     let path = Path::current().join(".git").join("index");
-    fs::create_file_all(path, &content[..], content.len());
+    fs::create_file_all(path, &content[..]);
     
     Ok(())
 } 

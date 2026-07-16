@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-pub fn glob(pattern: &str, text: &str) -> bool {
+pub fn glob(text: &str, pattern: &str) -> bool {
     let p: Vec<char> = pattern.chars().collect();
     let t: Vec<char> = text.chars().collect();
     glob_rec(&p, 0, &t, 0)

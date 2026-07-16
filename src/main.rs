@@ -27,6 +27,7 @@ mod indx;
 mod tree;
 mod commit;
 mod consts;
+mod profile;
 
 extern crate alloc;
 

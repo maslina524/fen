@@ -20,11 +20,3 @@ pub fn git_config_path() -> &'static Path {
         user_path().clone().join(".gitconfig")
     })
 }
-
-static FEN_CONFIG_PATH: OnceLock<Path> = OnceLock::new();
-
-pub fn fen_config_path() -> &'static Path {
-    FEN_CONFIG_PATH.get_or_init(|| {
-        user_path().clone().join(".fenconfig")
-    })
-}

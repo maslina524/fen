@@ -1,5 +1,6 @@
 use alloc::boxed::Box;
 use alloc::borrow::ToOwned;
+use alloc::collections::BTreeSet;
 use alloc::vec::Vec;
 use alloc::string::{ToString, String};
 use alloc::format;
@@ -62,6 +63,16 @@ pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> Result<Sha1, Box<dy
         });
     }
 
+    let mut seen = BTreeSet::new();
+    for te in &tree_entries {
+        if !seen.insert(&te.name) {
+            return Err(format!(
+                "duplicate entry in tree for prefix '{}': '{}'",
+                prefix, te.name
+            ).into());
+        }
+    }
+
     tree_entries.sort_by(|a, b| a.name.cmp(&b.name));
 
     let mut data = Vec::new();
@@ -87,7 +98,7 @@ pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> Result<Sha1, Box<dy
     zlib::compress(&raw, &mut buf);
 
     let save_path = Path::current().join(".git").join("objects").join(&hash[..2]).join(&hash[2..]);
-    fs::create_file_all(save_path, &buf[..], buf.len())?;
+    fs::create_file_all(save_path, &buf[..])?;
 
     crate::println!("tree hash: {}", hash);
 

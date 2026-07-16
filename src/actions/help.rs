@@ -11,13 +11,13 @@ pub fn help(cmd: Option<String>) -> NoResult {
 
     println!("{YELLOW}Usage:{ESCAPE}");
     println!("  {BOLD}fen{ESCAPE} [-v | --version] [-p | --exec-path]");
-    println!("      <command> [<args>]\n");
+    println!("      <command> [<args>]");
 
-    println!("{YELLOW}Options:{ESCAPE}");
+    println!("\n{YELLOW}Options:{ESCAPE}");
     option("-v", "--version", "Prints the version");
     option("-p", "--exec-path", "Prints the path to the executable file");
 
-    println!("{YELLOW}Actions:{ESCAPE}");
+    println!("\n{YELLOW}Actions:{ESCAPE}");
     action("init", "Initializes a new Git repository");
     action("add", "Adds files to the staging area");
     action("commit", "Creates a commit of the files in the staging area");

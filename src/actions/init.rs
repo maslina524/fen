@@ -27,20 +27,20 @@ pub fn init() -> NoResult {
     fs::create_dir(".git/hooks")?;             // hooks
     fs::create_dir(".git/info")?;              // info
 
-    // refs/heads/master
-    let content = b"";
-    fs::create_file(".git/refs/heads/master", content, content.len())?;
+    // // refs/heads/master
+    // let content = b"";
+    // fs::create_file(".git/refs/heads/master", content, content.len())?;
 
     // info/exclude
-    fs::create_file(".git/info/exclude", b"", 0)?;
+    fs::create_file(".git/info/exclude", b"")?;
 
     // HEAD
     let content = b"ref: refs/heads/master\n";
-    fs::create_file(".git/HEAD", content, content.len())?;
+    fs::create_file(".git/HEAD", content)?;
 
     // description
     let content = b"Unnamed repository; edit this file 'description' to name the repository.\n";
-    fs::create_file(".git/description", content, content.len())?;
+    fs::create_file(".git/description", content)?;
 
     // config
     let map = toml!(
@@ -54,7 +54,7 @@ pub fn init() -> NoResult {
         }
     ).to_string();
     let content = map.as_bytes();
-    fs::create_file(".git/config", content, content.len())?;
+    fs::create_file(".git/config", content)?;
 
     Ok(())
 }

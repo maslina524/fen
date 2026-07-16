@@ -18,8 +18,19 @@ pub fn get_head() -> Result<Option<[u8; 40]>, Box<dyn core::error::Error>> {
         return Err("HEAD file corrupted".into());
     }
 
-    let head_path = format!(".git/{}", &head_path_raw[5..]);
-    let head_bytes = fs::read_to_bytes(head_path.trim())?;
+    let head_path = format!(".git/{}", &head_path_raw[5..].trim());
+    if !fs::exists(&head_path) {
+        return Ok(None);
+    }
+    
+    let mut head_bytes = fs::read_to_bytes(head_path.trim())?;
+    while let Some(&b) = head_bytes.last() {
+        if b.is_ascii_whitespace() {
+            head_bytes.pop();
+        } else {
+            break;
+        }
+    }
     
     if head_bytes.len() == 0 {
         return Ok(None);
@@ -38,7 +49,7 @@ pub fn set_head(hash: &Sha1) -> Result<(), Box<dyn core::error::Error>> {
     let head_path = format!(".git/{}", &head_path_raw[5..]);
     let hex_hash = hash.hex();
     let content = hex_hash.as_bytes();
-    fs::create_file_all(head_path.trim(), content, content.len())?;
+    fs::create_file_all(head_path.trim(), content)?;
 
     Ok(())
 }
@@ -66,7 +77,7 @@ pub fn write_commit(tree: &Sha1, msg: &str) -> Result<Sha1, Box<dyn core::error:
     // Commiter
     let timestamp = env::timestamp();
     let tz = env::get_time_zone_string();
-    body.extend(format!("commiter {NAME} <{EMAIL}> {timestamp} {tz}\n\n").as_bytes());
+    body.extend(format!("committer {NAME} <{EMAIL}> {timestamp} {tz}\n\n").as_bytes());
 
     // Message
     body.extend(format!("{msg}\n").as_bytes());
@@ -85,7 +96,7 @@ pub fn write_commit(tree: &Sha1, msg: &str) -> Result<Sha1, Box<dyn core::error:
     zlib::compress(&raw, &mut buf);
 
     let save_path = Path::current().join(".git").join("objects").join(&hash[..2]).join(&hash[2..]);
-    fs::create_file_all(&save_path, &buf[..], buf.len())?;
+    fs::create_file_all(&save_path, &buf[..])?;
 
     crate::println!("commit hash: {}", hash);
     set_head(&hasher)?;

@@ -187,7 +187,7 @@ pub fn set_file_attribute<T: Into<Path>>(path: T, attributes: u32) -> error::Res
     Ok(())
 }
 
-pub fn create_file<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error::Result<()> {
+pub fn create_file<T: Into<Path>>(path: T, content: &[u8]) -> error::Result<()> {
     let path_wide = path.into().to_utf16_string();
 
     let handle = unsafe { CreateFileW(
@@ -208,7 +208,7 @@ pub fn create_file<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error:
     let result = unsafe { WriteFile(
         handle, 
         content.as_ptr(), 
-        len as u32, 
+        content.len() as u32, 
         written as *mut u32, 
         core::ptr::null_mut()
     ) };
@@ -226,7 +226,7 @@ pub fn create_file<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error:
     Ok(())
 }
 
-pub fn create_file_all<T: Into<Path>>(path: T, content: &[u8], len: usize) -> error::Result<()> {
+pub fn create_file_all<T: Into<Path>>(path: T, content: &[u8]) -> error::Result<()> {
     let path = path.into();
     let parts = &path.parts;
 
@@ -245,7 +245,7 @@ pub fn create_file_all<T: Into<Path>>(path: T, content: &[u8], len: usize) -> er
             }
         }
     }
-    create_file(path, content, len)
+    create_file(path, content)
 }
 
 pub fn exists<T: Into<Path>>(path: T) -> bool {
@@ -338,7 +338,7 @@ pub fn read_to_bytes<T: Into<Path>>(path: T) -> error::Result<Vec<u8>> {
         core::ptr::null_mut()
     ) };
     if handle == INVALID_HANDLE_VALUE {
-        let error = ErrorCode::last().panic();
+        let error = ErrorCode::last();
         return Err(error);
     }
 

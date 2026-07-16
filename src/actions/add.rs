@@ -1,6 +1,7 @@
 use alloc::collections::BTreeMap;
 use alloc::string::{ToString, String};
 use alloc::vec::Vec;
+use alloc::vec;
 
 use crate::consts::*;
 use crate::{FenResult, blob, glob, indx, println};
@@ -12,7 +13,8 @@ pub fn add(patterns: &[String], map: BTreeMap<String, String>) -> FenResult<()> 
         return Err("No file patterns to add to index".into());
     }
 
-    let files = find_files(patterns);
+    let gitignore = vec![".git/*"];
+    let files = find_files(patterns, &gitignore);
     let mut index = indx::read_index()?;
     for file in &files {
         let sha1 = blob::write_blob(file)?.bytes();
@@ -65,21 +67,21 @@ pub fn add(patterns: &[String], map: BTreeMap<String, String>) -> FenResult<()> 
     Ok(())
 }
 
-fn find_files(patterns: &[String]) -> Vec<Path> {
+fn find_files(patterns: &[String], gitignore: &Vec<&str>) -> Vec<Path> {
     let mut results = Vec::new();
     for pat in patterns {
         let pat = pat.replace('\\', "/");
         let parts: Vec<&str> = pat.split('/').collect();
         let root = Path::current();
-        search_recursive(&root, &parts, &mut results);
+        search_recursive(&root, &parts, gitignore, &mut results);
     }
     results
 }
 
-fn search_recursive(current: &Path, parts: &[&str], results: &mut Vec<Path>) {
+fn search_recursive(current: &Path, parts: &[&str], gitignore: &Vec<&str>, results: &mut Vec<Path>) {
     if parts.is_empty() {
         if current.is_file() {
-            results.push(current.clone());
+            push(current.clone(), results, gitignore);
         }
         return;
     }
@@ -88,14 +90,14 @@ fn search_recursive(current: &Path, parts: &[&str], results: &mut Vec<Path>) {
     let rest = &parts[1..];
 
     if part == "**" {
-        search_recursive(current, rest, results);
+        search_recursive(current, rest, gitignore, results);
 
         if let Ok(items) = fs::read_dir(current.clone()) {
             for item in items {
                 let name = item.name();
                 let sub_path = current.clone().join(&name);
                 if sub_path.is_dir() {
-                    search_recursive(&sub_path, parts, results);
+                    search_recursive(&sub_path, parts, gitignore, results);
                 }
             }
         }
@@ -114,13 +116,22 @@ fn search_recursive(current: &Path, parts: &[&str], results: &mut Vec<Path>) {
 
             if rest.is_empty() {
                 if sub_path.is_file() {
-                    results.push(sub_path);
+                    push(sub_path, results, gitignore);
                 }
             } else {
                 if sub_path.is_dir() {
-                    search_recursive(&sub_path, rest, results);
+                    search_recursive(&sub_path, rest, gitignore, results);
                 }
             }
         }
     }
+}
+
+fn push(path: Path, results: &mut Vec<Path>, gitignore: &Vec<&str>) {
+    for ignore in gitignore {
+        if glob::glob(&path.normalize_string(), ignore) {
+            return;
+        }
+    }
+    results.push(path);
 }

@@ -2,7 +2,7 @@
 #![cfg_attr(not(test), no_main)]
 #![allow(unused)]
 
-pub type NoResult = Result<(), Box<dyn core::error::Error>>;
+pub type FenResult<T> = Result<T, Box<dyn core::error::Error>>;
 
 use alloc::collections::*;
 use alloc::collections::BTreeMap;
@@ -51,13 +51,13 @@ mod panic_impl {
     }
 }
 
-fn version() -> NoResult {
+fn version() -> FenResult<()> {
     let version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
     println!("Fen v{version}");
     Ok(())
 }
 
-fn exec_path() -> NoResult {
+fn exec_path() -> FenResult<()> {
     let path = os::env::current_exe();
     println!("{path}");
     Ok(())
@@ -90,7 +90,7 @@ extern "C" fn main() -> i32 {
     return 0;
 }
 
-fn handler(parser: ArgsParser) -> NoResult {
+fn handler(parser: ArgsParser) -> FenResult<()> {
     let args = &env::args()[1..];
     let parsed = parser.parse(args)?;
 

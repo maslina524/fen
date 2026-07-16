@@ -7,7 +7,7 @@ use alloc::format;
 
 use crate::indx::{self, IndexFile};
 use crate::os::fs::{self, Path};
-use crate::zlib;
+use crate::{FenResult, zlib};
 use crate::sha1::Sha1;
 
 struct TreeEntry {
@@ -16,7 +16,7 @@ struct TreeEntry {
     hash: [u8; 20],
 }
 
-pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> Result<Sha1, Box<dyn core::error::Error>> {
+pub fn write_tree(entries: &Vec<IndexFile>, prefix: &str) -> FenResult<Sha1> {
     let mut file_entries = Vec::new();
     let mut dir_prefixes = Vec::new();
     let prefix_with_slash = if prefix.is_empty() { String::new() } else { format!("{}/", prefix) };

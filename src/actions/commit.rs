@@ -1,9 +1,9 @@
 use alloc::string::String;
 
 use crate::{commit, indx, tree};
-use crate::{NoResult, println};
+use crate::{FenResult, println};
 
-pub fn commit(msg: Option<&String>) -> NoResult {
+pub fn commit(msg: Option<&String>) -> FenResult<()> {
     let msg = if let Some(msg) = msg { msg } else {
         return Err("the commit requires a message, specify it using the -m or --message flag".into());
     };

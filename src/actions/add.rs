@@ -1,11 +1,11 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use crate::{NoResult, blob, glob, indx, println};
+use crate::{FenResult, blob, glob, indx, println};
 use crate::os::fs::{self, Path};
 use crate::indx::IndexFile;
 
-pub fn add(patterns: &[String]) -> NoResult {
+pub fn add(patterns: &[String]) -> FenResult<()> {
     if patterns.is_empty() {
         return Err("No file patterns to add to index".into());
     }

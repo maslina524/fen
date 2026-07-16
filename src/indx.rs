@@ -2,6 +2,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::boxed::Box;
 
+use crate::FenResult;
 use crate::os::fs::Path;
 use crate::os::{error, fs};
 use crate::sha1::Sha1;
@@ -24,7 +25,7 @@ pub struct IndexFile {
     pub gid: u32
 }
 
-pub fn read_index() -> Result<Vec<IndexFile>, Box<dyn core::error::Error>> {
+pub fn read_index() -> FenResult<Vec<IndexFile>> {
     let path = Path::current().join(".git").join("index");
     if !fs::exists(&path) {
         return Ok(Vec::new());

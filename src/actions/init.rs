@@ -2,9 +2,9 @@ use alloc::string::ToString;
 
 use crate::os::error::ErrorType;
 use crate::os::fs;
-use crate::{NoResult, toml};
+use crate::{FenResult, toml};
 
-pub fn init() -> NoResult {
+pub fn init() -> FenResult<()> {
     if let Err(e) = fs::create_dir(".git") {
         return match e.typ() {
             ErrorType::DirAlreadyExists => Err("git already initialized in this directory".into()),

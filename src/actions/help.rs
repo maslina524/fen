@@ -1,12 +1,12 @@
 use alloc::string::String;
 
-use crate::{NoResult, println};
+use crate::{FenResult, println};
 
 const ESCAPE: &str = "\x1b[0m";
 const BOLD: &str = "\x1b[1m";
 const YELLOW: &str = "\x1b[0;33m";
 
-pub fn help(cmd: Option<String>) -> NoResult {
+pub fn help(cmd: Option<String>) -> FenResult<()> {
     println!("Git client fully written in Rust    {BOLD}(• ᴛ • マ!{ESCAPE}\n");
 
     println!("{YELLOW}Usage:{ESCAPE}");

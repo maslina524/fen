@@ -7,12 +7,9 @@ use crate::os::env;
 use crate::os::fs::{self, Path, create_file};
 use crate::os::error;
 use crate::sha1::Sha1;
-use crate::zlib;
+use crate::{FenResult, profile, zlib};
 
-const NAME: &str = "temp_name";
-const EMAIL: &str = "example@gmail.com";
-
-pub fn get_head() -> Result<Option<[u8; 40]>, Box<dyn core::error::Error>> {
+pub fn get_head() -> FenResult<Option<[u8; 40]>> {
     let head_path_raw = fs::read_to_string(".git/HEAD")?;
     if !head_path_raw.starts_with("ref: ") {
         return Err("HEAD file corrupted".into());
@@ -40,7 +37,7 @@ pub fn get_head() -> Result<Option<[u8; 40]>, Box<dyn core::error::Error>> {
     Ok(Some(ret))
 }
 
-pub fn set_head(hash: &Sha1) -> Result<(), Box<dyn core::error::Error>> {
+pub fn set_head(hash: &Sha1) -> FenResult<()> {
     let head_path_raw = fs::read_to_string(".git/HEAD")?;
     if !head_path_raw.starts_with("ref: ") {
         return Err("HEAD file corrupted".into());
@@ -54,7 +51,7 @@ pub fn set_head(hash: &Sha1) -> Result<(), Box<dyn core::error::Error>> {
     Ok(())
 }
 
-pub fn write_commit(tree: &Sha1, msg: &str) -> Result<Sha1, Box<dyn core::error::Error>> {
+pub fn write_commit(tree: &Sha1, msg: &str) -> FenResult<Sha1> {
     let mut body = Vec::new();
 
     // Tree
@@ -69,15 +66,19 @@ pub fn write_commit(tree: &Sha1, msg: &str) -> Result<Sha1, Box<dyn core::error:
         body.push(0xA);
     };
 
+    let profile = profile::get_profile()?;
+    let name = profile.name;
+    let email = profile.email;
+
     // Author
     let timestamp = env::timestamp();
     let tz = env::get_time_zone_string();
-    body.extend(format!("author {NAME} <{EMAIL}> {timestamp} {tz}\n").as_bytes());
+    body.extend(format!("author {name} <{email}> {timestamp} {tz}\n").as_bytes());
 
     // Commiter
     let timestamp = env::timestamp();
     let tz = env::get_time_zone_string();
-    body.extend(format!("committer {NAME} <{EMAIL}> {timestamp} {tz}\n\n").as_bytes());
+    body.extend(format!("committer {name} <{email}> {timestamp} {tz}\n\n").as_bytes());
 
     // Message
     body.extend(format!("{msg}\n").as_bytes());

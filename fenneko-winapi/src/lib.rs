@@ -18,3 +18,10 @@ pub mod handle;
 pub mod intrinsic;
 pub mod macros;
 pub mod raw;
+
+use raw::HANDLE;
+
+pub trait Handle {
+    fn from_raw(val: HANDLE) -> Self;
+    fn as_raw(&self) -> HANDLE;
+}

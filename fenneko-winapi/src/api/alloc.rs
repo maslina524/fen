@@ -4,7 +4,7 @@ use core::{
 };
 
 use crate::{
-    handle::{Handle, HeapHandle},
+    Handle,
     intrinsic,
     raw::{self, HANDLE},
 };
@@ -174,6 +174,20 @@ impl<T> HeapPtr<T> {
     pub const fn cast<U>(self) -> HeapPtr<U> {
         let nonnull = self.as_non_null().cast::<U>();
         HeapPtr(nonnull)
+    }
+}
+
+#[derive(Clone, Copy)]
+#[repr(transparent)]
+pub struct HeapHandle(HANDLE);
+
+impl Handle for HeapHandle {
+    fn from_raw(val: HANDLE) -> Self {
+        Self(val)
+    }
+
+    fn as_raw(&self) -> HANDLE {
+        self.0
     }
 }
 

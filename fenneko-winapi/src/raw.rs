@@ -20,7 +20,7 @@ macro_rules! link {
 }
 
 link!("ntdll" fn NtTerminateProcess(processhandle: HANDLE, exitstatus: NTSTATUS) -> NTSTATUS);
-link!("ntdll" fn RtlAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, dwBytes: ULONG) -> LPVOID);
+link!("ntdll" fn RtlAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, dwBytes: usize) -> LPVOID);
 link!("ntdll" fn RtlFreeHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID) -> BOOLEAN);
 link!("ntdll" fn RtlReAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID, size: usize) -> LPVOID);
 

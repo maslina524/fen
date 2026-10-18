@@ -1,4 +1,7 @@
-use core::{ffi::c_void, marker::PhantomData, ptr};
+use core::{
+    marker::PhantomData,
+    ptr::{self, NonNull},
+};
 
 use crate::{
     handle::{Handle, HeapHandle},
@@ -135,44 +138,85 @@ impl HeapFlags<ReAlloc> {
     }
 }
 
+#[repr(transparent)]
+pub struct HeapPtr<T: Sized>(NonNull<T>);
+
+impl<T> HeapPtr<T> {
+    /// # Safety
+    ///
+    /// The pointer must be guaranteed to point to an initialized part of the heap;
+    /// the wrapper is required for safe operation with the allocator functions.
+    pub const unsafe fn new(ptr: *mut T) -> Self {
+        // SAFETY: Null == does not point to the heap, read Safety
+        let nonnull = unsafe { NonNull::new_unchecked(ptr) };
+        Self(nonnull)
+    }
+
+    #[must_use]
+    pub const fn as_nonull(&self) -> NonNull<T> {
+        self.0
+    }
+
+    #[must_use]
+    pub const fn as_ptr(&self) -> *mut T {
+        self.0.as_ptr()
+    }
+
+    #[must_use]
+    pub const fn into_ptr(self) -> *mut T {
+        self.0.as_ptr()
+    }
+
+    #[must_use]
+    pub const fn cast<U>(self) -> HeapPtr<U> {
+        let nonnull = self.as_nonull().cast::<U>();
+        HeapPtr(nonnull)
+    }
+}
+
 #[must_use]
 pub fn GetProccessHeap() -> HeapHandle {
-    // SAFETY: Valid address on x86_64.
+    // SAFETY: Valid address on x86_64
     #[cfg(target_arch = "x86_64")]
     let peb = unsafe { intrinsic::__readgsqword(0x60) };
 
-    // SAFETY: Valid address on x86.
+    // SAFETY: Valid address on x86
     #[cfg(target_arch = "x86")]
-    let peb = unsafe { intrinsic::__readfsqword(0x30) };
+    let peb = unsafe { intrinsic::__readfsdword(0x30) as u64 };
 
     // SAFETY: Valid address
-    let raw = unsafe { ptr::read((peb + PEB_OFFSET) as *const HANDLE) };
+    let raw = unsafe { ptr::read_unaligned((peb + PEB_OFFSET) as *const HANDLE) };
     HeapHandle::from_raw(raw)
 }
 
 #[must_use]
-pub fn HeapAlloc(handle: &HeapHandle, flags: HeapFlags<Alloc>, bytes: usize) -> *mut c_void {
+pub fn HeapAlloc(handle: HeapHandle, flags: HeapFlags<Alloc>, bytes: usize) -> HeapPtr<()> {
     // SAFETY: `HeapHandle` guarantees a valid handle, `HeapFlags<Alloc>` restricts to valid flags, safe
-    unsafe { raw::RtlAllocateHeap(handle.as_raw(), flags.build(), bytes as u32) }
+    let raw = unsafe { raw::RtlAllocateHeap(handle.as_raw(), flags.build(), bytes) };
+    // SAFETY: The pointer was obtained from the heap
+    unsafe { HeapPtr::new(raw.cast()) }
 }
 
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub fn HeapFree(handle: HeapHandle, flags: HeapFlags<Free>, ptr: *mut c_void) {
+pub fn HeapFree(handle: HeapHandle, flags: HeapFlags<Free>, ptr: HeapPtr<()>) {
     // SAFETY: `HeapHandle` guarantees a valid handle, `HeapFlags<Free>` restricts to valid flags, safe
     unsafe {
-        raw::RtlFreeHeap(handle.into_raw(), flags.build(), ptr);
+        raw::RtlFreeHeap(handle.as_raw(), flags.build(), ptr.into_ptr().cast());
     }
 }
 
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
+#[must_use]
 pub fn HeapReAlloc(
-    handle: &HeapHandle,
+    handle: HeapHandle,
     flags: HeapFlags<ReAlloc>,
-    ptr: *mut c_void,
+    ptr: HeapPtr<()>,
     size: usize,
-) -> *mut c_void {
+) -> HeapPtr<()> {
     // SAFETY: `HeapHandle` guarantees a valid handle, `HeapFlags<ReAlloc>` restricts to valid flags, safe
-    unsafe { raw::RtlReAllocateHeap(handle.as_raw(), flags.build(), ptr, size) }
+    let raw = unsafe {
+        raw::RtlReAllocateHeap(handle.as_raw(), flags.build(), ptr.into_ptr().cast(), size)
+    };
+    // SAFETY: The pointer was obtained from the heap
+    unsafe { HeapPtr::new(raw.cast()) }
 }
 
 #[cfg(test)]
@@ -187,11 +231,10 @@ mod tests {
     fn alloc_test() {
         let handle = GetProccessHeap();
 
-        let ptr = HeapAlloc(&handle, HeapFlags::alloc(), SIZE);
-        assert!(!ptr.is_null());
+        let ptr = HeapAlloc(handle, HeapFlags::alloc(), SIZE);
 
-        // SAFETY: We check how safe this is
-        unsafe { ptr::write(ptr.cast(), i32::MAX) };
+        // SAFETY: We write a number into the memory allocated by Alloc
+        unsafe { ptr::write(ptr.as_ptr().cast(), i32::MAX) };
 
         HeapFree(handle, HeapFlags::free(), ptr);
     }
@@ -200,24 +243,21 @@ mod tests {
     fn realloc_test() {
         let handle = GetProccessHeap();
 
-        let mut ptr = HeapAlloc(&handle, HeapFlags::alloc(), SIZE);
-        assert!(!ptr.is_null());
+        let mut ptr = HeapAlloc(handle, HeapFlags::alloc(), SIZE);
 
-        // SAFETY: We check how safe this is
-        unsafe { ptr::write(ptr.cast(), i32::MAX) };
+        // SAFETY: We write a number into the memory allocated by Alloc
+        unsafe { ptr::write(ptr.as_ptr().cast(), i32::MAX) };
 
-        // Realloc
-        ptr = HeapReAlloc(&handle, HeapFlags::realloc(), ptr, SIZE * 2);
-        assert!(!ptr.is_null());
+        ptr = HeapReAlloc(handle, HeapFlags::realloc(), ptr, SIZE * 2);
 
-        // SAFETY: We check how safe this is
-        unsafe { ptr::write(ptr.cast::<i32>().add(1), i32::MAX / 2) };
+        // SAFETY: We write a number into the memory allocated by ReAlloc
+        unsafe { ptr::write(ptr.as_ptr().cast::<i32>().add(1), i32::MAX / 2) };
 
-        // Read
-        // SAFETY: We check how safe this is
+        // SAFETY: We check whether the old data was preserved
+        // correctly and the new data was written after ReAlloc
         unsafe {
-            assert_eq!(ptr::read(ptr.cast::<i32>()), i32::MAX);
-            assert_eq!(ptr::read(ptr.cast::<i32>().add(1)), i32::MAX / 2);
+            assert_eq!(ptr::read(ptr.as_ptr().cast::<i32>()), i32::MAX);
+            assert_eq!(ptr::read(ptr.as_ptr().cast::<i32>().add(1)), i32::MAX / 2);
         }
 
         HeapFree(handle, HeapFlags::free(), ptr);
@@ -227,12 +267,13 @@ mod tests {
     fn alloc_flags_test() {
         let handle = GetProccessHeap();
 
-        let ptr = HeapAlloc(&handle, HeapFlags::alloc().zero_memory(), 1024).cast::<i8>();
-        assert!(!ptr.is_null());
+        let ptr = HeapAlloc(handle, HeapFlags::alloc().zero_memory(), 1024).cast::<i8>();
 
         for i in 0..1024 {
-            // SAFETY: We check how safe this is
-            assert_eq!(unsafe { ptr::read(ptr.add(i)) }, 0i8);
+            // SAFETY: We check whether all 1024 bytes are zeroed as the flag promises
+            assert_eq!(unsafe { ptr::read(ptr.as_ptr().add(i)) }, 0i8);
         }
+
+        HeapFree(handle, HeapFlags::free(), ptr.cast());
     }
 }

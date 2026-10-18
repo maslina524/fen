@@ -4,6 +4,7 @@ use core::arch::asm;
 ///
 /// You must guarantee a valid offset.
 #[must_use]
+#[cfg(target_arch = "x86_64")]
 pub unsafe fn __readgsqword(offset: u32) -> u64 {
     let out: u64;
     // SAFETY: We do not guarantee safe operation of the function
@@ -22,14 +23,15 @@ pub unsafe fn __readgsqword(offset: u32) -> u64 {
 ///
 /// You must guarantee a valid offset.
 #[must_use]
-pub unsafe fn __readfsqword(offset: u32) -> u64 {
-    let out: u64;
+#[cfg(target_arch = "x86")]
+pub unsafe fn __readfsdword(offset: u32) -> u32 {
+    let out: u32;
     // SAFETY: We do not guarantee safe operation of the function
     unsafe {
         asm!(
-            "mov {}, fs:[rax]",
+            "mov {}, fs:[eax]",
             out(reg) out,
-            in("rax") offset,
+            in("eax") offset,
             options(nostack, pure, readonly)
         );
     }

@@ -9,6 +9,8 @@
 
 use core::ffi::c_void;
 
+use crate::intrinsic;
+
 macro_rules! link {
     ($library:literal $($link_name:literal)? $(#[$doc:meta])? fn $($function:tt)*) => (
         #[link(name = $library)]
@@ -24,14 +26,32 @@ link!("ntdll" fn RtlAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, dwBytes: usize) 
 link!("ntdll" fn RtlFreeHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID) -> BOOLEAN);
 link!("ntdll" fn RtlReAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID, size: usize) -> LPVOID);
 
+#[must_use]
+pub fn NtCurrentPeb() -> *const c_void {
+    // SAFETY: Valid address on `x86_64`
+    #[cfg(target_arch = "x86_64")]
+    let peb = unsafe { intrinsic::__readgsqword(0x60) };
+
+    // SAFETY: Valid address on `x86`
+    #[cfg(target_arch = "x86")]
+    let peb = unsafe { intrinsic::__readfsdword(0x30) as u64 };
+
+    peb as *const _
+}
+
 pub type HANDLE = *mut c_void;
 pub type NTSTATUS = i32;
 
 // Pointers
+pub type PVOID = *const c_void;
 pub type LPVOID = *mut c_void;
 
 // Primitives
 pub type ULONG = u32;
+pub type USHORT = u16;
+
+// Strings
+pub type PWSTR = *const u16;
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
@@ -65,4 +85,58 @@ impl Into<bool> for BOOL {
     fn into(self) -> bool {
         self.0 > 0
     }
+}
+
+#[repr(C)]
+pub struct UNICODE_STRING {
+    pub Length: USHORT,
+    pub MaximumLength: USHORT,
+    pub Buffer: PWSTR,
+}
+
+#[repr(C)]
+pub struct CURDIR {
+    pub DosPath: UNICODE_STRING,
+    pub Handle: HANDLE,
+}
+
+#[repr(C)]
+pub struct RTL_DRIVE_LETTER_CURDIR {
+    pub Flags: USHORT,
+    pub Length: USHORT,
+    pub TimeStamp: ULONG,
+    pub DosPath: UNICODE_STRING,
+}
+
+#[repr(C)]
+pub struct RTL_USER_PROCESS_PARAMETERS {
+    pub MaximumLength: ULONG,
+    pub Length: ULONG,
+    pub Flags: ULONG,
+    pub DebugFlags: ULONG,
+    pub ConsoleHandle: PVOID,
+    pub ConsoleFlags: ULONG,
+    pub StandardInput: PVOID,
+    pub StandardOutput: PVOID,
+    pub StandardError: PVOID,
+    pub CurrentDirectory: CURDIR,
+    pub DllPath: UNICODE_STRING,
+    pub ImagePathName: UNICODE_STRING,
+    pub CommandLine: UNICODE_STRING,
+    pub Environment: PVOID,
+    pub StartingX: ULONG,
+    pub StartingY: ULONG,
+    pub CountX: ULONG,
+    pub CountY: ULONG,
+    pub CountCharsX: ULONG,
+    pub CountCharsY: ULONG,
+    pub FillAttribute: ULONG,
+    pub WindowFlags: ULONG,
+    pub ShowWindowFlags: ULONG,
+    pub WindowTitle: UNICODE_STRING,
+    pub DesktopInfo: UNICODE_STRING,
+    pub ShellInfo: UNICODE_STRING,
+    pub RuntimeData: UNICODE_STRING,
+    pub CurrentDirectores: [RTL_DRIVE_LETTER_CURDIR; 32],
+    pub EnvironmentSize: ULONG,
 }

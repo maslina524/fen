@@ -4,15 +4,13 @@ use core::{
 };
 
 use crate::{
-    Handle,
-    intrinsic,
-    raw::{self, HANDLE},
+    Handle, raw::{self, HANDLE, NtCurrentPeb},
 };
 
 #[cfg(target_arch = "x86_64")]
-const PEB_OFFSET: u64 = 0x30;
+const PEB_OFFSET: usize = 0x30;
 #[cfg(target_arch = "x86")]
-const PEB_OFFSET: u64 = 0x18;
+const PEB_OFFSET: usize = 0x18;
 
 pub struct Alloc;
 pub struct Free;
@@ -193,16 +191,10 @@ impl Handle for HeapHandle {
 
 #[must_use]
 pub fn GetProcessHeap() -> HeapHandle {
-    // SAFETY: Valid address on `x86_64`
-    #[cfg(target_arch = "x86_64")]
-    let peb = unsafe { intrinsic::__readgsqword(0x60) };
-
-    // SAFETY: Valid address on `x86`
-    #[cfg(target_arch = "x86")]
-    let peb = unsafe { intrinsic::__readfsdword(0x30) as u64 };
+    let ptr = NtCurrentPeb();
 
     // SAFETY: Valid address
-    let raw = unsafe { ptr::read_unaligned((peb + PEB_OFFSET) as *const HANDLE) };
+    let raw = unsafe { ptr::read_unaligned(ptr.add(PEB_OFFSET).cast()) };
     HeapHandle::from_raw(raw)
 }
 

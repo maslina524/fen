@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "fenneko-cli",
+    "fenneko-cli", "fenneko-winapi",
 ]
 
 default-members = ["fenneko-cli"]

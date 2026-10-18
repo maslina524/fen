@@ -34,7 +34,15 @@ pub type LPVOID = *mut c_void;
 pub type ULONG = u32;
 
 #[repr(transparent)]
+#[derive(Clone, Copy)]
 pub struct BOOLEAN(u8);
+
+impl BOOLEAN {
+    #[must_use]
+    pub fn into_bool(self) -> bool {
+        self.into()
+    }
+}
 
 impl Into<bool> for BOOLEAN {
     fn into(self) -> bool {
@@ -43,7 +51,15 @@ impl Into<bool> for BOOLEAN {
 }
 
 #[repr(transparent)]
+#[derive(Clone, Copy)]
 pub struct BOOL(i32);
+
+impl BOOL {
+    #[must_use]
+    pub fn into_bool(self) -> bool {
+        self.into()
+    }
+}
 
 impl Into<bool> for BOOL {
     fn into(self) -> bool {

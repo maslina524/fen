@@ -7,3 +7,4 @@ authors.workspace = true
 # repository.workspace = true
 
 [dependencies]
+winapi = { path = "../fenneko-winapi" }

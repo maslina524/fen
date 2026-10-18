@@ -23,15 +23,27 @@ mod panic_impl {
 
 // extern crate alloc;
 
-use core::ffi;
+mod windows_source {
+    use core::arch::global_asm;
 
-// #[cfg(not(test))]
-#[cfg(target_os = "windows")]
-#[unsafe(no_mangle)]
-const extern "C" fn main() -> ffi::c_int {
-    fennec_main() as ffi::c_int
+    use winapi::api::process::ExitProcess;
+
+    global_asm!(
+        ".global _start",
+        "_start:",
+        "    and rsp, -16",
+        "    sub rsp, 32",
+        "    call fenneko_entry_point",
+        "    int 3",
+    );
+
+    #[unsafe(no_mangle)]
+    extern "C" fn fenneko_entry_point() -> ! {
+        let ret = crate::main();
+        ExitProcess(ret)
+    }
 }
 
-const fn fennec_main() -> i32 {
+const fn main() -> i32 {
     0
 }

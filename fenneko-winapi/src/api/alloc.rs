@@ -211,24 +211,22 @@ pub fn HeapAlloc<T: Sized>(
 }
 
 /// # Errors
-/// 
+///
 /// If memory cannot be freed, the old `ptr`
 /// passed to the function is returned in ``Err()``.
-pub fn HeapFree<T: Sized>(handle: HeapHandle, flags: HeapFlags<Free>, ptr: HeapPtr<T>) -> Result<(), HeapPtr<T>> {
+pub fn HeapFree<T: Sized>(
+    handle: HeapHandle,
+    flags: HeapFlags<Free>,
+    ptr: HeapPtr<T>,
+) -> Result<(), HeapPtr<T>> {
     // SAFETY: `HeapHandle` guarantees a valid handle, `HeapFlags<Free>` restricts to valid flags, safe
-    let ret = unsafe {
-        raw::RtlFreeHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast())
-    };
-    if ret.into_bool() {
-        Ok(())
-    } else {
-        Err(ptr)
-    }
+    let ret = unsafe { raw::RtlFreeHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast()) };
+    if ret.into_bool() { Ok(()) } else { Err(ptr) }
 }
 
 /// # Errors
-/// 
-/// If memory cannot be reallocated, the old `ptr` 
+///
+/// If memory cannot be reallocated, the old `ptr`
 /// passed to the function is returned in ``Err()``.
 pub fn HeapReAlloc<T: Sized>(
     handle: HeapHandle,
@@ -236,7 +234,9 @@ pub fn HeapReAlloc<T: Sized>(
     ptr: HeapPtr<T>,
     count: usize,
 ) -> Result<HeapPtr<T>, HeapPtr<T>> {
-    let Some(bytes) = count.checked_mul(size_of::<T>()) else { return Err(ptr) };
+    let Some(bytes) = count.checked_mul(size_of::<T>()) else {
+        return Err(ptr);
+    };
 
     // SAFETY: `HeapHandle` guarantees a valid handle, `HeapFlags<ReAlloc>` restricts to valid flags, safe
     let raw = unsafe {
@@ -260,8 +260,7 @@ mod tests {
     fn alloc_test() {
         let handle = GetProcessHeap();
 
-        let ptr =
-            HeapAlloc(handle, HeapFlags::alloc(), 1).expect("HeapAlloc return null pointer");
+        let ptr = HeapAlloc(handle, HeapFlags::alloc(), 1).expect("HeapAlloc return null pointer");
 
         // SAFETY: We write a number into the memory allocated by `HeapAlloc`
         unsafe { ptr::write(ptr.as_ptr(), i32::MAX) };

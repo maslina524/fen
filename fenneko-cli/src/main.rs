@@ -21,7 +21,10 @@ mod panic_impl {
     }
 }
 
-// extern crate alloc;
+extern crate alloc;
+
+#[global_allocator]
+static ALLOCATOR: winapi::allocator::Allocator = winapi::allocator::Allocator;
 
 #[cfg(not(test))]
 #[cfg(target_os = "windows")]

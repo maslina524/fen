@@ -23,6 +23,8 @@ mod panic_impl {
 
 // extern crate alloc;
 
+#[cfg(not(test))]
+#[cfg(target_os = "windows")]
 mod windows_source {
     use core::arch::global_asm;
 

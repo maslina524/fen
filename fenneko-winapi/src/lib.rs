@@ -13,5 +13,6 @@
 #![allow(non_snake_case, reason = "WinAPI functions is camelCase")]
 
 pub mod api;
+pub mod intrinsic;
 pub mod macros;
 pub mod raw;

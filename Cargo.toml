@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "fenneko-cli", "fenneko-winapi",
+    "fenneko-cli", "fenneko-render", "fenneko-winapi",
 ]
 
 default-members = ["fenneko-cli"]
 
 [workspace.package]
-version = "0.5.0"
+version = "0.1.0"
 edition = "2024"
 license = "MIT"
 authors = ["maslina524 <luk.kirill2804@gmail.com>"]

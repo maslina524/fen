@@ -12,6 +12,7 @@
 #![allow(clippy::cargo_common_metadata, reason = "Not now")]
 
 pub(crate) mod raw;
+pub mod prelude;
 
 // Public api
 pub mod io;

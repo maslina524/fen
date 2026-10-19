@@ -25,9 +25,12 @@ mod entry;
 
 extern crate alloc;
 
+use common::prelude::*;
+
 #[global_allocator]
 static ALLOCATOR: winapi::allocator::Allocator = winapi::allocator::Allocator;
 
-const fn main() -> i32 {
+fn main() -> i32 {
+    println!("Hello World!!!");
     0
 }

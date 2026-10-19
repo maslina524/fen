@@ -1,5 +1,5 @@
 [package]
-name = "fenneko-cli"
+name = "fen"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

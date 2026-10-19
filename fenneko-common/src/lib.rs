@@ -15,3 +15,4 @@ pub(crate) mod raw;
 
 // Public api
 pub mod io;
+pub mod macros;

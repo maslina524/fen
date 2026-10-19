@@ -25,8 +25,7 @@ pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
     // SAFETY: We shift by a constant offset,
     // the offset corresponds to unofficial documentation
     let params_ptr: *const RTL_USER_PROCESS_PARAMETERS = unsafe {
-        peb
-            .byte_add(OFFSET)
+        peb.byte_add(OFFSET)
             .cast::<*const RTL_USER_PROCESS_PARAMETERS>()
             .read()
     };

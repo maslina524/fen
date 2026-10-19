@@ -1,4 +1,7 @@
-use winapi::api::{console::{StdHandle, GetStdHandle}, file::{FileHandle, Write, WriteFile}};
+use winapi::api::{
+    console::{GetStdHandle, StdHandle},
+    file::{FileHandle, Write, WriteFile},
+};
 
 pub type RawHandle = FileHandle<Write>;
 

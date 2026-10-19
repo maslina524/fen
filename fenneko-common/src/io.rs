@@ -63,7 +63,9 @@ mod tests {
         let string = "Hello World\n";
 
         let std = Stdout::new();
-        let ret = std.write_all(string.as_bytes()).expect("Failed to write to the stdout");
+        let ret = std
+            .write_all(string.as_bytes())
+            .expect("Failed to write to the stdout");
 
         assert_eq!(ret, string.len());
     }

@@ -2,7 +2,6 @@ use core::arch::global_asm;
 
 use winapi::api::process::ExitProcess;
 
-
 #[cfg(target_arch = "x86_64")]
 global_asm!(
     ".global _start",

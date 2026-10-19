@@ -1,7 +1,8 @@
 use core::{marker::PhantomData, ptr};
 
 use crate::{
-    Handle, NT_SUCCESS, raw::{HANDLE, IO_STATUS_BLOCK, NTSTATUS, NtWriteFile},
+    Handle, NT_SUCCESS,
+    raw::{HANDLE, IO_STATUS_BLOCK, NTSTATUS, NtWriteFile},
 };
 
 pub trait CanRead {}
@@ -37,7 +38,7 @@ impl<Tag> Handle for FileHandle<Tag> {
 }
 
 /// # Errors
-/// 
+///
 /// Mostly it always returns ``Ok()`` with the number of bytes written in it;
 /// situations where ``Err()`` is returned are kernel failures, for example the disk is full.
 pub fn WriteFile<T: CanWrite>(handle: &FileHandle<T>, buf: &[u8]) -> Result<usize, NTSTATUS> {
@@ -67,13 +68,17 @@ pub fn WriteFile<T: CanWrite>(handle: &FileHandle<T>, buf: &[u8]) -> Result<usiz
 
 #[cfg(test)]
 mod tests {
-    use crate::api::{console::{GetStdHandle, StdHandle}, file::WriteFile};
+    use crate::api::{
+        console::{GetStdHandle, StdHandle},
+        file::WriteFile,
+    };
 
     #[test]
     fn write_to_stdout() {
         let handle = GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle");
         let string = "Hello World!\n";
-        let written = WriteFile(&handle, string.as_bytes()).expect("Failed to write to the console");
+        let written =
+            WriteFile(&handle, string.as_bytes()).expect("Failed to write to the console");
         assert_eq!(written, string.len());
     }
 }

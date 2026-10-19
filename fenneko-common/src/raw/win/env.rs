@@ -1,13 +1,14 @@
-use alloc::vec::Vec;
+use alloc::{string::String, sync::Arc, vec::Vec};
+use winapi::api::process::GetCommandLine;
 
-pub struct ArgsInner<'arg> {
-    source: &'arg str,
+pub struct ArgsInner {
+    source: String,
     chars: Vec<char>,
     pos: usize
 }
 
-impl<'arg> ArgsInner<'arg> {
-    pub fn new(source: &'arg str) -> Self {
+impl ArgsInner {
+    pub fn new(source: String) -> Self {
         let chars = source.chars().collect();
         Self { source, chars, pos: 0 }
     }
@@ -22,12 +23,17 @@ impl<'arg> ArgsInner<'arg> {
         ch
     }
 
-    fn build_str(&self, start: usize, len: usize) -> &'arg str {
-        &self.source[start..start + len]
+    const fn in_bound(&self) -> bool {
+        self.pos < self.chars.len()
+    }
+
+    fn build_str(&self, start: usize, len: usize) -> Arc<str> {
+        let string = &self.source[start..start + len];
+        Arc::from(string)
     }
 
     fn skip_whitespaces(&mut self) {
-        while self.pos < self.chars.len() && self.peek().is_whitespace() {
+        while self.in_bound() && self.peek().is_whitespace() {
             self.pos += 1;
         }
     }
@@ -48,40 +54,79 @@ impl<'arg> ArgsInner<'arg> {
         self.pop(); // "
         len
     }
-}
 
-impl<'arg> Iterator for ArgsInner<'arg> {
-    type Item = &'arg str;
-    fn next(&mut self) -> Option<Self::Item> {
-        let source_len = self.chars.len();
-        if self.pos >= source_len {
-            return None;
-        }
+    fn read_just_text_len(&mut self) -> usize {
+        let start = self.pos;
 
-        while self.pos < source_len {
-            self.skip_whitespaces();
-
-            if self.peek() == '\"' {
-                let start = self.pos + 1;
-                let len = self.read_in_quotes_len();
-                return Some(self.build_str(start, len))
-            }
-
+        while self.in_bound() && !self.peek().is_whitespace() {
             self.pos += 1;
         }
 
-        None
+        self.pos - start
     }
+}
+
+impl Iterator for ArgsInner {
+    type Item = Arc<str>;
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.in_bound() {
+            return None;
+        }
+
+        self.skip_whitespaces();
+        if !self.in_bound() { 
+            return None; 
+        }
+
+        if self.peek() == '\"' {
+            let start = self.pos + 1;
+            let len = self.read_in_quotes_len();
+            return Some(self.build_str(start, len))
+        }
+
+        let start = self.pos;
+        let len = self.read_just_text_len();
+        Some(self.build_str(start, len))
+    }
+}
+
+pub fn args_string() -> String {
+    GetCommandLine()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    macro_rules! next_is {
+        ($args:expr, $lit:literal) => {
+            assert_eq!(Some($lit), $args.next());
+        };
+    }
+
     #[test]
-    fn args_check_quotes() {
-        let mut args = ArgsInner::new("\"Hello\" \"World\" ");
-        assert_eq!(Some("Hello"), args.next());
-        assert_eq!(Some("World"), args.next());
+    fn args_check_quotes_test() {
+        let mut args = ArgsInner::new("\"Hello\" \"World\" \"\"");
+        next_is!(args, "Hello");
+        next_is!(args, "World");
+        next_is!(args, "");
+    }
+
+    #[test]
+    fn args_check_all_test() {
+        let mut args = ArgsInner::new("git commit -m \"Initial commit\"");
+        next_is!(args, "git");
+        next_is!(args, "commit");
+        next_is!(args, "-m");
+        next_is!(args, "Initial commit");
+    }
+
+    #[test]
+    fn args_splash_test() {
+        let mut args = ArgsInner::new("git commit -m \"Initial commit\"");
+        next_is!(args, "git");
+        next_is!(args, "commit");
+        next_is!(args, "-m");
+        next_is!(args, "Initial commit");
     }
 }

@@ -18,4 +18,5 @@ pub mod prelude;
 
 // Public api
 pub mod io;
+pub mod env;
 pub mod macros;

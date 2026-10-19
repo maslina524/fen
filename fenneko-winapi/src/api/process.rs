@@ -35,7 +35,7 @@ pub fn GetCommandLine() -> String {
     let ptr = params.CommandLine.Buffer;
     let len = params.CommandLine.Length;
     // SAFETY: Slice from the memory area allocated by WinAPI, safe
-    let slice = unsafe { slice::from_raw_parts(ptr, len as usize) };
+    let slice = unsafe { slice::from_raw_parts(ptr, len as usize / size_of::<u16>()) };
     String::from_utf16_lossy(slice)
 }
 
@@ -46,6 +46,6 @@ mod tests {
     #[test]
     fn command_line_test() {
         let string = GetCommandLine();
-        assert!(string.contains(&"fen"));
+        assert!(string.contains("fen"));
     }
 }

@@ -23,14 +23,18 @@ mod panic_impl {
 
 mod entry;
 
-extern crate alloc;
-
 use common::prelude::*;
+
+extern crate alloc;
 
 #[global_allocator]
 static ALLOCATOR: winapi::allocator::Allocator = winapi::allocator::Allocator;
 
 fn main() -> i32 {
-    println!("Hello World!!!");
+    let args = env::args();
+    for arg in args {
+        println!("{arg}");
+    }
+    
     0
 }

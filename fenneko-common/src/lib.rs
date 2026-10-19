@@ -11,6 +11,8 @@
 )]
 #![allow(clippy::cargo_common_metadata, reason = "Not now")]
 
+extern crate alloc;
+
 pub(crate) mod raw;
 pub mod prelude;
 

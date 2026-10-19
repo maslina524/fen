@@ -7,7 +7,7 @@
 )]
 #![allow(clippy::unreadable_literal)]
 
-use core::ffi::c_void;
+use core::{ffi::c_void, mem};
 
 use crate::intrinsic;
 
@@ -25,6 +25,7 @@ link!("ntdll" fn NtTerminateProcess(processhandle: HANDLE, exitstatus: NTSTATUS)
 link!("ntdll" fn RtlAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, dwBytes: usize) -> LPVOID);
 link!("ntdll" fn RtlFreeHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID) -> BOOLEAN);
 link!("ntdll" fn RtlReAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID, size: usize) -> LPVOID);
+link!("ntdll" fn NtWriteFile(fileHandle: HANDLE, event: HANDLE, apcRoutine: PIO_APC_ROUTINE, apcContext: PVOID, ioStatusBlock: *mut IO_STATUS_BLOCK, buffer: PVOID, length: ULONG, byteOffset: PLARGE_INTEGER, key: PULONG) -> NTSTATUS);
 
 #[must_use]
 pub fn NtCurrentPeb() -> *const c_void {
@@ -41,12 +42,16 @@ pub fn NtCurrentPeb() -> *const c_void {
 
 pub type HANDLE = *mut c_void;
 pub type NTSTATUS = i32;
+pub type PIO_APC_ROUTINE = *mut c_void;
 
 // Pointers
+pub type PULONG = *const u32;
+pub type PLARGE_INTEGER = *const i64;
 pub type PVOID = *const c_void;
 pub type LPVOID = *mut c_void;
 
 // Primitives
+pub type ULONG_PTR = usize;
 pub type ULONG = u32;
 pub type USHORT = u16;
 
@@ -139,4 +144,24 @@ pub struct RTL_USER_PROCESS_PARAMETERS {
     pub RuntimeData: UNICODE_STRING,
     pub CurrentDirectores: [RTL_DRIVE_LETTER_CURDIR; 32],
     pub EnvironmentSize: ULONG,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union IO_STATUS_BLOCK_INNER {
+    pub Status: NTSTATUS,
+    pub Pointer: PVOID,
+}
+
+#[repr(C)]
+pub struct IO_STATUS_BLOCK {
+    pub Union: IO_STATUS_BLOCK_INNER,
+    pub Information: ULONG_PTR,
+}
+
+impl Default for IO_STATUS_BLOCK {
+    fn default() -> Self {
+        // SAFETY: All fields can be zeroed
+        unsafe { mem::zeroed() }
+    }
 }

@@ -5,8 +5,10 @@ use core::{
 };
 
 use crate::{
-    api::alloc::{GetProcessHeap, HeapAlloc, HeapFlags, HeapFree, HeapPtr, HeapReAlloc, HeapHandle},
-    Handle
+    Handle,
+    api::alloc::{
+        GetProcessHeap, HeapAlloc, HeapFlags, HeapFree, HeapHandle, HeapPtr, HeapReAlloc,
+    },
 };
 
 static HANDLE: AtomicUsize = AtomicUsize::new(0);

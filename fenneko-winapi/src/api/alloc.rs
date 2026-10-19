@@ -4,7 +4,8 @@ use core::{
 };
 
 use crate::{
-    Handle, raw::{self, HANDLE, NtCurrentPeb},
+    Handle,
+    raw::{self, HANDLE, NtCurrentPeb},
 };
 
 #[cfg(target_arch = "x86_64")]

@@ -21,33 +21,12 @@ mod panic_impl {
     }
 }
 
+mod entry;
+
 extern crate alloc;
 
 #[global_allocator]
 static ALLOCATOR: winapi::allocator::Allocator = winapi::allocator::Allocator;
-
-#[cfg(not(test))]
-#[cfg(target_os = "windows")]
-mod windows_source {
-    use core::arch::global_asm;
-
-    use winapi::api::process::ExitProcess;
-
-    global_asm!(
-        ".global _start",
-        "_start:",
-        "    and rsp, -16",
-        "    sub rsp, 32",
-        "    call fenneko_entry_point",
-        "    int 3",
-    );
-
-    #[unsafe(no_mangle)]
-    extern "C" fn fenneko_entry_point() -> ! {
-        let ret = crate::main();
-        ExitProcess(ret)
-    }
-}
 
 const fn main() -> i32 {
     0

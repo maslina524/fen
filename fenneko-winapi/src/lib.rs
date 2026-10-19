@@ -12,6 +12,8 @@
 #![allow(clippy::cargo_common_metadata, reason = "Not now")]
 #![allow(non_snake_case, reason = "WinAPI functions is camelCase")]
 
+extern crate alloc;
+
 pub mod allocator;
 pub mod api;
 pub mod handle;

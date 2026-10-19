@@ -1,17 +1,12 @@
 use core::{
     marker::PhantomData,
-    ptr::{self, NonNull},
+    ptr::NonNull,
 };
 
 use crate::{
     Handle,
     raw::{self, HANDLE, NtCurrentPeb},
 };
-
-#[cfg(target_arch = "x86_64")]
-const PEB_OFFSET: usize = 0x30;
-#[cfg(target_arch = "x86")]
-const PEB_OFFSET: usize = 0x18;
 
 pub struct Alloc;
 pub struct Free;
@@ -190,12 +185,18 @@ impl Handle for HeapHandle {
     }
 }
 
+/// # Panics
+/// 
+/// Panics when it fails to get the PEB, in theory this should NEVER happen and nothing 
+/// would work without the PEB, so it panics instead of returning ``Result``/``Option``.
 #[must_use]
 pub fn GetProcessHeap() -> HeapHandle {
     let ptr = NtCurrentPeb();
+    assert!(!ptr.is_null(), "Failed to get PEB");
+    // SAFETY: The PEB is guaranteed to be located at the `ptr`
+    let peb = unsafe { &*ptr };
 
-    // SAFETY: Valid address
-    let raw = unsafe { ptr::read_unaligned(ptr.add(PEB_OFFSET).cast()) };
+    let raw = peb.ProcessHeap;
     HeapHandle::from_raw(raw)
 }
 

@@ -28,7 +28,7 @@ link!("ntdll" fn RtlReAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID,
 link!("ntdll" fn NtWriteFile(fileHandle: HANDLE, event: HANDLE, apcRoutine: PIO_APC_ROUTINE, apcContext: PVOID, ioStatusBlock: *mut IO_STATUS_BLOCK, buffer: PVOID, length: ULONG, byteOffset: PLARGE_INTEGER, key: PULONG) -> NTSTATUS);
 
 #[must_use]
-pub fn NtCurrentPeb() -> *const c_void {
+pub fn NtCurrentPeb() -> *const Peb {
     // SAFETY: Valid address on `x86_64`
     #[cfg(target_arch = "x86_64")]
     let peb = unsafe { intrinsic::__readgsqword(0x60) };
@@ -47,13 +47,14 @@ pub type PIO_APC_ROUTINE = *mut c_void;
 // Pointers
 pub type PULONG = *const u32;
 pub type PLARGE_INTEGER = *const i64;
-pub type PVOID = *const c_void;
+pub type PVOID = *mut c_void;
 pub type LPVOID = *mut c_void;
 
 // Primitives
-pub type ULONG_PTR = usize;
-pub type ULONG = u32;
+pub type BYTE = u8;
 pub type USHORT = u16;
+pub type ULONG = u32;
+pub type ULONG_PTR = usize;
 
 // Strings
 pub type PWSTR = *const u16;
@@ -90,6 +91,21 @@ impl Into<bool> for BOOL {
     fn into(self) -> bool {
         self.0 > 0
     }
+}
+
+#[repr(C)]
+pub struct Peb {
+    pub InheritedAddressSpace: BYTE,
+    pub ReadImageFileExecOptions: BYTE,
+    pub BeingDebugged: BYTE,
+    pub BitField: BYTE,
+    pub Mutant: PVOID,                 // 0x08
+    pub ImageBaseAddress: PVOID,       // 0x10
+    pub Ldr: PVOID,                    // 0x18
+    pub ProcessParameters: *const RTL_USER_PROCESS_PARAMETERS, // 0x20
+    pub SubSystemData: PVOID,          // 0x28
+    pub ProcessHeap: PVOID,            // 0x30
+    // etc.
 }
 
 #[repr(C)]

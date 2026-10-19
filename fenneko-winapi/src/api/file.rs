@@ -51,7 +51,7 @@ pub fn WriteFile<T: CanWrite>(handle: &FileHandle<T>, buf: &[u8]) -> Result<usiz
             ptr::null_mut(),
             ptr::null_mut(),
             &raw mut info,
-            buf.as_ptr().cast(),
+            buf.as_ptr().cast_mut().cast(),
             buf.len() as u32,
             ptr::null(),
             ptr::null(),

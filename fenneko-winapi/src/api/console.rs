@@ -1,13 +1,8 @@
 use crate::{
     Handle,
     api::file::{FileHandle, Write},
-    raw::{NtCurrentPeb, RTL_USER_PROCESS_PARAMETERS},
+    raw::NtCurrentPeb,
 };
-
-#[cfg(target_arch = "x86_64")]
-const OFFSET: usize = 0x20;
-#[cfg(target_arch = "x86")]
-const OFFSET: usize = 0x10;
 
 #[derive(Clone, Copy)]
 pub enum StdHandle {
@@ -15,23 +10,22 @@ pub enum StdHandle {
     Stderr,
     Stdin,
 }
+
+/// # Panics
+/// 
+/// Panics when it fails to get the PEB, in theory this should NEVER happen and nothing 
+/// would work without the PEB, so it panics instead of returning ``Result``/``Option``.
 #[must_use]
 pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
-    let peb = NtCurrentPeb();
-    if peb.is_null() {
-        return None;
-    }
+    let ptr = NtCurrentPeb();
+    assert!(!ptr.is_null(), "Failed to get PEB");
+    // SAFETY: The PEB is guaranteed to be located at the `ptr`
+    let peb = unsafe { &*ptr };
 
     // SAFETY: We shift by a constant offset,
     // the offset corresponds to unofficial documentation
-    let params_ptr: *const RTL_USER_PROCESS_PARAMETERS = unsafe {
-        peb.byte_add(OFFSET)
-            .cast::<*const RTL_USER_PROCESS_PARAMETERS>()
-            .read()
-    };
-    if params_ptr.is_null() {
-        return None;
-    }
+    let params_ptr = peb.ProcessParameters;
+    assert!(!params_ptr.is_null(), "Failed to get ProcessParameters from PEB");
     // SAFETY: The required structure is guaranteed to be located at the pointer
     let params = unsafe { &*params_ptr };
 
@@ -45,7 +39,7 @@ pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
         return None;
     }
 
-    Some(FileHandle::from_raw(val.cast_mut()))
+    Some(FileHandle::from_raw(val))
 }
 
 #[cfg(test)]

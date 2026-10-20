@@ -11,3 +11,6 @@ build = "../build.rs"
 winapi = { path = "../fenneko-winapi" }
 common = { path = "../fenneko-common" }
 proc = { path = "../fenneko-proc" }
+
+[lints]
+workspace = true

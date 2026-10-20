@@ -9,6 +9,6 @@ fn main() {
         println!("cargo:rustc-link-arg-bins=/ENTRY:_start");
         println!("cargo:rustc-link-arg-bins=/SUBSYSTEM:CONSOLE");
     } else {
-        println!("{os}-{env}-{arch}")
+        println!("{os}-{env}-{arch}");
     }
 }

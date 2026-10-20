@@ -30,3 +30,20 @@ debug = true
 codegen-units = 1
 panic = "abort"
 overflow-checks = true
+
+[workspace.lints.clippy]
+all      = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+nursery  = { level = "deny", priority = -1 }
+cargo    = { level = "deny", priority = -1 }
+
+missing_safety_doc         = "warn"
+undocumented_unsafe_blocks = "warn"
+
+# There's no point in them, it will make the code cleaner
+cast_lossless            = "allow"
+cast_possible_truncation = "allow"
+cast_possible_wrap       = "allow"
+cast_sign_loss           = "allow"
+
+cargo_common_metadata = "allow"

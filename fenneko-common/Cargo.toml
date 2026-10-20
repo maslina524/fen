@@ -7,3 +7,6 @@ authors.workspace = true
 
 [dependencies]
 winapi = { path = "../fenneko-winapi" }
+
+[lints]
+workspace = true

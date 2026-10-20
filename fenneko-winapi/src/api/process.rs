@@ -1,8 +1,10 @@
+use alloc::string::String;
 use core::{hint::spin_loop, slice};
 
-use alloc::string::String;
-
-use crate::{handle, raw::{self, NtCurrentPeb}};
+use crate::{
+    handle,
+    raw::{self, NtCurrentPeb},
+};
 
 pub fn ExitProcess(code: i32) -> ! {
     // SAFETY: Passing itself (-1) as the descriptor,
@@ -15,9 +17,10 @@ pub fn ExitProcess(code: i32) -> ! {
 }
 
 /// # Panics
-/// 
-/// Panics when it fails to get the PEB, in theory this should NEVER happen and nothing 
-/// would work without the PEB, so it panics instead of returning ``Result``/``Option``.
+///
+/// Panics when it fails to get the PEB, in theory this should NEVER
+/// happen and nothing would work without the PEB, so it panics
+/// instead of returning ``Result``/``Option``.
 #[must_use]
 pub fn GetCommandLine() -> String {
     let peb_ptr = NtCurrentPeb();
@@ -28,14 +31,20 @@ pub fn GetCommandLine() -> String {
     // SAFETY: We shift by a constant offset,
     // the offset corresponds to unofficial documentation
     let params_ptr = peb.ProcessParameters;
-    assert!(!params_ptr.is_null(), "Failed to get ProcessParameters from PEB");
-    // SAFETY: The required structure is guaranteed to be located at the pointer
+    assert!(
+        !params_ptr.is_null(),
+        "Failed to get ProcessParameters from PEB"
+    );
+    // SAFETY: The required structure is guaranteed to be located at
+    // the pointer
     let params = unsafe { &*params_ptr };
 
     let ptr = params.CommandLine.Buffer;
     let len = params.CommandLine.Length;
     // SAFETY: Slice from the memory area allocated by WinAPI, safe
-    let slice = unsafe { slice::from_raw_parts(ptr, len as usize / size_of::<u16>()) };
+    let slice = unsafe {
+        slice::from_raw_parts(ptr, len as usize / size_of::<u16>())
+    };
     String::from_utf16_lossy(slice)
 }
 

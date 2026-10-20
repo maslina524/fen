@@ -12,9 +12,10 @@ pub enum StdHandle {
 }
 
 /// # Panics
-/// 
-/// Panics when it fails to get the PEB, in theory this should NEVER happen and nothing 
-/// would work without the PEB, so it panics instead of returning ``Result``/``Option``.
+///
+/// Panics when it fails to get the PEB, in theory this should NEVER
+/// happen and nothing would work without the PEB, so it panics
+/// instead of returning ``Result``/``Option``.
 #[must_use]
 pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
     let ptr = NtCurrentPeb();
@@ -25,8 +26,12 @@ pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
     // SAFETY: We shift by a constant offset,
     // the offset corresponds to unofficial documentation
     let params_ptr = peb.ProcessParameters;
-    assert!(!params_ptr.is_null(), "Failed to get ProcessParameters from PEB");
-    // SAFETY: The required structure is guaranteed to be located at the pointer
+    assert!(
+        !params_ptr.is_null(),
+        "Failed to get ProcessParameters from PEB"
+    );
+    // SAFETY: The required structure is guaranteed to be located at
+    // the pointer
     let params = unsafe { &*params_ptr };
 
     let val = match typ {
@@ -48,8 +53,11 @@ mod tests {
 
     #[test]
     fn get_handles_test() {
-        GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle");
-        GetStdHandle(StdHandle::Stderr).expect("Failed to get std handle");
-        GetStdHandle(StdHandle::Stdin).expect("Failed to get std handle");
+        GetStdHandle(StdHandle::Stdout)
+            .expect("Failed to get std handle");
+        GetStdHandle(StdHandle::Stderr)
+            .expect("Failed to get std handle");
+        GetStdHandle(StdHandle::Stdin)
+            .expect("Failed to get std handle");
     }
 }

@@ -1,7 +1,11 @@
-use core::ffi::{c_void, c_int};
+use core::ffi::{c_int, c_void};
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
+pub unsafe extern "C" fn memcpy(
+    dest: *mut c_void,
+    src: *const c_void,
+    n: usize,
+) -> *mut c_void {
     let d = dest.cast::<u8>();
     let s = src.cast::<u8>();
     for i in 0..n {
@@ -12,7 +16,11 @@ pub unsafe extern "C" fn memcpy(dest: *mut c_void, src: *const c_void, n: usize)
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn memmove(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void {
+pub unsafe extern "C" fn memmove(
+    dest: *mut c_void,
+    src: *const c_void,
+    n: usize,
+) -> *mut c_void {
     let d = dest.cast::<u8>();
     let s = src.cast::<u8>();
     if (d as usize) < (s as usize) {
@@ -34,7 +42,11 @@ pub unsafe extern "C" fn memmove(dest: *mut c_void, src: *const c_void, n: usize
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn memset(dest: *mut c_void, c: c_int, n: usize) -> *mut c_void {
+pub unsafe extern "C" fn memset(
+    dest: *mut c_void,
+    c: c_int,
+    n: usize,
+) -> *mut c_void {
     let d = dest.cast::<u8>();
     for i in 0..n {
         // SAFETY: Moving the pointer within the buffer
@@ -44,7 +56,11 @@ pub unsafe extern "C" fn memset(dest: *mut c_void, c: c_int, n: usize) -> *mut c
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn memcmp(a: *const c_void, b: *const c_void, n: usize) -> c_int {
+pub unsafe extern "C" fn memcmp(
+    a: *const c_void,
+    b: *const c_void,
+    n: usize,
+) -> c_int {
     let a = a.cast::<u8>();
     let b = b.cast::<u8>();
     for i in 0..n {
@@ -60,13 +76,19 @@ pub unsafe extern "C" fn memcmp(a: *const c_void, b: *const c_void, n: usize) ->
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn bcmp(a: *const c_void, b: *const c_void, n: usize) -> c_int {
+pub unsafe extern "C" fn bcmp(
+    a: *const c_void,
+    b: *const c_void,
+    n: usize,
+) -> c_int {
     // SAFETY: Just C fn
     unsafe { memcmp(a, b, n) }
 }
 
 #[unsafe(no_mangle)]
-pub const unsafe extern "C" fn strlen(s: *const core::ffi::c_char) -> usize {
+pub const unsafe extern "C" fn strlen(
+    s: *const core::ffi::c_char,
+) -> usize {
     let s = s.cast::<u8>();
     let mut len = 0;
     // SAFETY: Moving the pointer within the buffer

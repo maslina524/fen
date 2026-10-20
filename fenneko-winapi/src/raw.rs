@@ -99,13 +99,13 @@ pub struct Peb {
     pub ReadImageFileExecOptions: BYTE,
     pub BeingDebugged: BYTE,
     pub BitField: BYTE,
-    pub Mutant: PVOID,                 // 0x08
-    pub ImageBaseAddress: PVOID,       // 0x10
-    pub Ldr: PVOID,                    // 0x18
+    pub Mutant: PVOID,           // 0x08
+    pub ImageBaseAddress: PVOID, // 0x10
+    pub Ldr: PVOID,              // 0x18
     pub ProcessParameters: *const RTL_USER_PROCESS_PARAMETERS, // 0x20
-    pub SubSystemData: PVOID,          // 0x28
-    pub ProcessHeap: PVOID,            // 0x30
-    // etc.
+    pub SubSystemData: PVOID,    // 0x28
+    pub ProcessHeap: PVOID,      /* 0x30
+                                  * etc. */
 }
 
 #[repr(C)]

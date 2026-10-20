@@ -6,11 +6,13 @@ use winapi::api::{
 pub type RawHandle = FileHandle<Write>;
 
 pub fn stdout() -> RawHandle {
-    GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle (stdout)")
+    GetStdHandle(StdHandle::Stdout)
+        .expect("Failed to get std handle (stdout)")
 }
 
 pub fn stderr() -> RawHandle {
-    GetStdHandle(StdHandle::Stderr).expect("Failed to get std handle (stderr)")
+    GetStdHandle(StdHandle::Stderr)
+        .expect("Failed to get std handle (stderr)")
 }
 
 /// Returns the number of bytes written.

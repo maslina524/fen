@@ -1,7 +1,15 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(not(test), no_main)]
-#![deny(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
-#![warn(clippy::missing_safety_doc, clippy::undocumented_unsafe_blocks)]
+#![deny(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo
+)]
+#![warn(
+    clippy::missing_safety_doc,
+    clippy::undocumented_unsafe_blocks
+)]
 #![allow(
     clippy::cast_lossless,
     clippy::cast_possible_truncation,

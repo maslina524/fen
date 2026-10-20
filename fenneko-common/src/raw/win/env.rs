@@ -1,16 +1,21 @@
 use alloc::{string::String, sync::Arc, vec::Vec};
+
 use winapi::api::process::GetCommandLine;
 
 pub struct ArgsInner {
     source: String,
     chars: Vec<char>,
-    pos: usize
+    pos: usize,
 }
 
 impl ArgsInner {
     pub fn new(source: String) -> Self {
         let chars = source.chars().collect();
-        Self { source, chars, pos: 0 }
+        Self {
+            source,
+            chars,
+            pos: 0,
+        }
     }
 
     fn peek(&self) -> char {
@@ -68,20 +73,21 @@ impl ArgsInner {
 
 impl Iterator for ArgsInner {
     type Item = Arc<str>;
+
     fn next(&mut self) -> Option<Self::Item> {
         if !self.in_bound() {
             return None;
         }
 
         self.skip_whitespaces();
-        if !self.in_bound() { 
-            return None; 
+        if !self.in_bound() {
+            return None;
         }
 
         if self.peek() == '\"' {
             let start = self.pos + 1;
             let len = self.read_in_quotes_len();
-            return Some(self.build_str(start, len))
+            return Some(self.build_str(start, len));
         }
 
         let start = self.pos;
@@ -106,7 +112,8 @@ mod tests {
 
     #[test]
     fn args_check_quotes_test() {
-        let mut args = ArgsInner::new("\"Hello\" \"World\" \"\"".to_owned());
+        let mut args =
+            ArgsInner::new("\"Hello\" \"World\" \"\"".to_owned());
         next_is!(args, "Hello");
         next_is!(args, "World");
         next_is!(args, "");
@@ -114,7 +121,9 @@ mod tests {
 
     #[test]
     fn args_check_all_test() {
-        let mut args = ArgsInner::new("git commit -m \"Initial commit\"".to_owned());
+        let mut args = ArgsInner::new(
+            "git commit -m \"Initial commit\"".to_owned(),
+        );
         next_is!(args, "git");
         next_is!(args, "commit");
         next_is!(args, "-m");
@@ -123,7 +132,9 @@ mod tests {
 
     #[test]
     fn args_splash_test() {
-        let mut args = ArgsInner::new("git commit -m \"Initial commit\"".to_owned());
+        let mut args = ArgsInner::new(
+            "git commit -m \"Initial commit\"".to_owned(),
+        );
         next_is!(args, "git");
         next_is!(args, "commit");
         next_is!(args, "-m");

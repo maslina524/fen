@@ -37,5 +37,7 @@ fn main() -> i32 {
         println!("{arg}");
     }
     
+    println!(proc::ansi!("[bold]Hello[/bold], World!"));
+
     0
 }

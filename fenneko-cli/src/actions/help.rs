@@ -1,24 +1,10 @@
 use core::convert::Infallible;
+use core::fmt;
 
 use common::prelude::*;
 use proc::ansi;
 
 use crate::{actions::Action, render::Renderable};
-
-static HELP: &str = proc::ansi!(
-"
-
-[yellow][bold]Usage:[esc]
-  fen [-v | --version]
-      <command> [<args>]
-
-[yellow][bold]Options:[esc]
-  -v,\t--version       Prints the version
-
-[yellow][bold]Actions:[esc]
-  help          Show this message
-"
-);
 
 static HELP_OPTIONS: &[HelpOutOption] = &[
     HelpOutOption::new(Some("-v"), Some("--version"), "Prints the version")
@@ -64,10 +50,54 @@ impl HelpOut {
 }
 
 impl Renderable for HelpOut {
-    fn render_console(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn render_console(&self, f: &mut dyn fmt::Write) -> fmt::Result {
+        fn render_option_in_usage(f: &mut dyn fmt::Write, option: &HelpOutOption) -> fmt::Result {
+            match (option.small, option.long) {
+                (Some(s), Some(l)) => f.write_fmt(format_args!(" [{s} | {l}]")),
+                (None, Some(l)) => f.write_fmt(format_args!(" [{l}]")),
+                (Some(s), None) => f.write_fmt(format_args!(" [{s}]")),
+                (None, None) => Ok(())
+            }
+        }
+
+        fn render_option(f: &mut dyn fmt::Write, option: &HelpOutOption) -> fmt::Result {
+            match (option.small, option.long) {
+                (Some(s), Some(l)) => f.write_fmt(format_args!("  {s},\t{l:<10}  \t"))?,
+                (None, Some(l)) => f.write_fmt(format_args!(" \t{l:<10}  \t"))?,
+                (Some(s), None) => f.write_fmt(format_args!(" {s}\t{:<10} \t", ""))?,
+                (None, None) => {}
+            }
+            f.write_str(option.desc)
+        }
+
+        fn render_action(f: &mut dyn fmt::Write, action: &HelpOutAction) -> fmt::Result {
+            let name = action.name;
+            let desc = action.desc;
+            f.write_fmt(format_args!("  {name:<10}{desc}"))
+        }
+
+        // Head
         f.write_str(self.head)?;
 
+        // Usage
         f.write_str(ansi!("\n\n[yellow][bold]Usage:[esc]\n"))?;
+        f.write_str("  fen")?;
+        for o in self.options {
+            render_option_in_usage(f, o)?;
+        }
+        f.write_str("\n      <command> [<args>")?;
+
+        // Options
+        f.write_str(ansi!("\n\n[yellow][bold]Options:[esc]\n"))?;
+        for o in self.options {
+            render_option(f, o)?;
+        }
+
+        // Actions
+        f.write_str(ansi!("\n\n[yellow][bold]Actions:[esc]\n"))?;
+        for a in self.actions {
+            render_action(f, a)?;
+        }
 
         Ok(())
     }

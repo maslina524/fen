@@ -11,10 +11,17 @@ mod panic_impl {
     }
 }
 
+mod actions;
+mod render;
 mod builtins;
 mod entry;
 
 use common::prelude::*;
+use common::io::Stdout;
+
+use crate::render::Renderable;
+
+use crate::actions::Action;
 
 extern crate alloc;
 
@@ -24,11 +31,10 @@ static ALLOCATOR: winapi::allocator::Allocator =
 
 fn main() -> i32 {
     let args = env::args();
-    for arg in args {
-        println!("{arg}");
-    }
 
-    println!(proc::ansi!("[bold]Hello[/bold], World!"));
+    let mut stdout = Stdout::new();
+
+    let _ = actions::Help::run(args).unwrap().render_console(&mut stdout);
 
     0
 }

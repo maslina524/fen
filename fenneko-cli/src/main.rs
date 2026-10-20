@@ -12,16 +12,14 @@ mod panic_impl {
 }
 
 mod actions;
-mod render;
 mod builtins;
 mod entry;
+mod options;
+mod render;
 
-use common::prelude::*;
-use common::io::Stdout;
+use common::{io::Stdout, prelude::*};
 
-use crate::render::Renderable;
-
-use crate::actions::Action;
+use crate::{actions::Action, render::Renderable};
 
 extern crate alloc;
 
@@ -29,12 +27,33 @@ extern crate alloc;
 static ALLOCATOR: winapi::allocator::Allocator =
     winapi::allocator::Allocator;
 
+fn help(stdout: &mut Stdout) {
+    let _ = actions::Help::run(None)
+        .unwrap()
+        .render_console(stdout);
+}
+
+fn version(stdout: &mut Stdout) {
+    let _ = options::Version::run(None)
+        .unwrap()
+        .render_console(stdout);
+}
+
 fn main() -> i32 {
-    let args = env::args();
+    let mut args = env::args();
+    args.next(); // Skip program name
 
     let mut stdout = Stdout::new();
 
-    let _ = actions::Help::run(args).unwrap().render_console(&mut stdout);
+    let Some(name) = args.next() else {
+        help(&mut stdout);
+        return 0;
+    };
+
+    match &*name {
+        "--version" | "-v" => version(&mut stdout),
+        _ => help(&mut stdout)
+    }
 
     0
 }

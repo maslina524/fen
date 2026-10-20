@@ -2,6 +2,10 @@ use alloc::{string::String, sync::Arc, vec::Vec};
 
 use winapi::api::process::GetCommandLine;
 
+pub mod consts {
+    pub const OS: &str = "windows";
+}
+
 pub struct ArgsInner {
     source: String,
     chars: Vec<char>,

@@ -22,6 +22,7 @@ mod panic_impl {
 }
 
 mod entry;
+mod builtins;
 
 use common::prelude::*;
 

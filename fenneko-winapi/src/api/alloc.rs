@@ -2,7 +2,7 @@ use core::{marker::PhantomData, ptr::NonNull};
 
 use crate::{
     Handle,
-    raw::{self, HANDLE, NtCurrentPeb},
+    raw::{self, HANDLE, RtlGetCurrentPeb},
 };
 
 pub struct Alloc;
@@ -190,7 +190,8 @@ impl Handle for HeapHandle {
 /// instead of returning ``Result``/``Option``.
 #[must_use]
 pub fn GetProcessHeap() -> HeapHandle {
-    let ptr = NtCurrentPeb();
+    // SAFETY: We always get a valid pointer to the PEB
+    let ptr = unsafe { RtlGetCurrentPeb() };
     assert!(!ptr.is_null(), "Failed to get PEB");
     // SAFETY: The PEB is guaranteed to be located at the `ptr`
     let peb = unsafe { &*ptr };

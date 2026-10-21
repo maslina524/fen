@@ -7,7 +7,6 @@ extern crate alloc;
 pub mod allocator;
 pub mod api;
 pub mod handle;
-pub mod intrinsic;
 pub mod macros;
 pub mod raw;
 

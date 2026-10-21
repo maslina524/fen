@@ -3,7 +3,7 @@ use core::{hint::spin_loop, slice};
 
 use crate::{
     handle,
-    raw::{self, NtCurrentPeb},
+    raw::{self, RtlGetCurrentPeb},
 };
 
 pub fn ExitProcess(code: i32) -> ! {
@@ -23,7 +23,8 @@ pub fn ExitProcess(code: i32) -> ! {
 /// instead of returning ``Result``/``Option``.
 #[must_use]
 pub fn GetCommandLine() -> String {
-    let peb_ptr = NtCurrentPeb();
+    // SAFETY: We always get a valid pointer to the PEB
+    let peb_ptr = unsafe { RtlGetCurrentPeb() };
     assert!(!peb_ptr.is_null(), "Failed to get PEB");
     // SAFETY: The PEB is guaranteed to be located at the `ptr`
     let peb = unsafe { &*peb_ptr };

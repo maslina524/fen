@@ -1,44 +1,4 @@
-#![allow(
-    non_snake_case,
-    non_upper_case_globals,
-    non_camel_case_types,
-    dead_code,
-    clippy::all
-)]
-#![allow(clippy::unreadable_literal)]
-
 use core::{ffi::c_void, mem};
-
-use crate::intrinsic;
-
-macro_rules! link {
-    ($library:literal $($link_name:literal)? $(#[$doc:meta])? fn $($function:tt)*) => (
-        #[link(name = $library)]
-        unsafe extern "system" {
-            $(#[link_name=$link_name])?
-            pub fn $($function)*;
-        }
-    )
-}
-
-link!("ntdll" fn NtTerminateProcess(processhandle: HANDLE, exitstatus: NTSTATUS) -> NTSTATUS);
-link!("ntdll" fn RtlAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, dwBytes: usize) -> LPVOID);
-link!("ntdll" fn RtlFreeHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID) -> BOOLEAN);
-link!("ntdll" fn RtlReAllocateHeap(hHeap: HANDLE, dwFlags: ULONG, lpMem: LPVOID, size: usize) -> LPVOID);
-link!("ntdll" fn NtWriteFile(fileHandle: HANDLE, event: HANDLE, apcRoutine: PIO_APC_ROUTINE, apcContext: PVOID, ioStatusBlock: *mut IO_STATUS_BLOCK, buffer: PVOID, length: ULONG, byteOffset: PLARGE_INTEGER, key: PULONG) -> NTSTATUS);
-
-#[must_use]
-pub fn NtCurrentPeb() -> *const Peb {
-    // SAFETY: Valid address on `x86_64`
-    #[cfg(target_arch = "x86_64")]
-    let peb = unsafe { intrinsic::__readgsqword(0x60) };
-
-    // SAFETY: Valid address on `x86`
-    #[cfg(target_arch = "x86")]
-    let peb = unsafe { intrinsic::__readfsdword(0x30) as u64 };
-
-    peb as *const _
-}
 
 pub type HANDLE = *mut c_void;
 pub type NTSTATUS = i32;
@@ -91,21 +51,6 @@ impl Into<bool> for BOOL {
     fn into(self) -> bool {
         self.0 > 0
     }
-}
-
-#[repr(C)]
-pub struct Peb {
-    pub InheritedAddressSpace: BYTE,
-    pub ReadImageFileExecOptions: BYTE,
-    pub BeingDebugged: BYTE,
-    pub BitField: BYTE,
-    pub Mutant: PVOID,           // 0x08
-    pub ImageBaseAddress: PVOID, // 0x10
-    pub Ldr: PVOID,              // 0x18
-    pub ProcessParameters: *const RTL_USER_PROCESS_PARAMETERS, // 0x20
-    pub SubSystemData: PVOID,    // 0x28
-    pub ProcessHeap: PVOID,      /* 0x30
-                                  * etc. */
 }
 
 #[repr(C)]

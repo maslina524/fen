@@ -1,7 +1,7 @@
 use crate::{
     Handle,
     api::file::{FileHandle, Write},
-    raw::NtCurrentPeb,
+    raw::RtlGetCurrentPeb,
 };
 
 #[derive(Clone, Copy)]
@@ -18,7 +18,8 @@ pub enum StdHandle {
 /// instead of returning ``Result``/``Option``.
 #[must_use]
 pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
-    let ptr = NtCurrentPeb();
+    // SAFETY: We always get a valid pointer to the PEB
+    let ptr = unsafe { RtlGetCurrentPeb() };
     assert!(!ptr.is_null(), "Failed to get PEB");
     // SAFETY: The PEB is guaranteed to be located at the `ptr`
     let peb = unsafe { &*ptr };

@@ -13,6 +13,7 @@ pub type LPVOID = *mut c_void;
 // Primitives
 pub type BYTE = u8;
 pub type USHORT = u16;
+pub type UINT = u32;
 pub type ULONG = u32;
 pub type ULONG_PTR = usize;
 

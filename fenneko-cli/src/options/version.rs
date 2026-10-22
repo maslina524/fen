@@ -33,7 +33,9 @@ impl Renderable for VersionOut {
 pub struct Version;
 
 impl Action<VersionOut, Infallible> for Version {
-    fn run(_args: Option<env::Args>) -> Result<VersionOut, Infallible> {
+    fn run(
+        _args: Option<env::Args>,
+    ) -> Result<VersionOut, Infallible> {
         fn version_part_as_u8(part: &'static str) -> u8 {
             part.parse::<u8>().unwrap_or_default()
         }

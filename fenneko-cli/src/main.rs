@@ -28,15 +28,12 @@ static ALLOCATOR: winapi::allocator::Allocator =
     winapi::allocator::Allocator;
 
 fn help(stdout: &mut Stdout) {
-    let _ = actions::Help::run(None)
-        .unwrap()
-        .render_console(stdout);
+    let _ = actions::Help::run(None).unwrap().render_console(stdout);
 }
 
 fn version(stdout: &mut Stdout) {
-    let _ = options::Version::run(None)
-        .unwrap()
-        .render_console(stdout);
+    let _ =
+        options::Version::run(None).unwrap().render_console(stdout);
 }
 
 fn main() -> i32 {
@@ -52,7 +49,7 @@ fn main() -> i32 {
 
     match &*name {
         "--version" | "-v" => version(&mut stdout),
-        _ => help(&mut stdout)
+        _ => help(&mut stdout),
     }
 
     0

@@ -1,7 +1,7 @@
 use crate::{
     Handle,
     api::file::{FileHandle, Write},
-    raw::RtlGetCurrentPeb,
+    raw::{self, RtlGetCurrentPeb},
 };
 
 #[derive(Clone, Copy)]
@@ -9,6 +9,12 @@ pub enum StdHandle {
     Stdout,
     Stderr,
     Stdin,
+}
+
+#[derive(Clone, Copy)]
+#[repr(u32)]
+pub enum CodePage {
+    Utf8 = 65001,
 }
 
 /// # Panics
@@ -46,6 +52,13 @@ pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
     }
 
     Some(FileHandle::from_raw(val))
+}
+
+pub fn SetConsoleOutputCP(code_page: CodePage) {
+    // SAFETY: wCodePage is valid, the return value is not checked, I
+    // will check it when I create my own implementation, for now it
+    // stays like this
+    unsafe { raw::SetConsoleOutputCP(code_page as u32) };
 }
 
 #[cfg(test)]

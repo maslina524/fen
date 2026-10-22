@@ -11,8 +11,8 @@ pub struct PEB {
     pub Mutant: t::PVOID,           // 0x08
     pub ImageBaseAddress: t::PVOID, // 0x10
     pub Ldr: t::PVOID,              // 0x18
-    pub ProcessParameters: *const t::RTL_USER_PROCESS_PARAMETERS, // 0x20
-    pub SubSystemData: t::PVOID,    // 0x28
-    pub ProcessHeap: t::PVOID,      /* 0x30
+    pub ProcessParameters: *const t::RTL_USER_PROCESS_PARAMETERS, /* 0x20 */
+    pub SubSystemData: t::PVOID, // 0x28
+    pub ProcessHeap: t::PVOID,   /* 0x30
                                   * etc. */
 }

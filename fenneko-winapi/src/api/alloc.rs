@@ -210,9 +210,7 @@ pub fn HeapAlloc<T: Sized>(
 
     // SAFETY: `HeapHandle` guarantees a valid handle,
     // `HeapFlags<Alloc>` restricts to valid flags, safe
-    let raw = unsafe {
-        raw::RtlAllocateHeap(handle.as_raw(), flags.build(), bytes)
-    };
+    let raw = unsafe { raw::RtlAllocateHeap(handle.as_raw(), flags.build(), bytes) };
     if raw.is_null() {
         return None;
     }
@@ -232,13 +230,7 @@ pub fn HeapFree<T: Sized>(
 ) -> Result<(), HeapPtr<T>> {
     // SAFETY: `HeapHandle` guarantees a valid handle,
     // `HeapFlags<Free>` restricts to valid flags, safe
-    let ret = unsafe {
-        raw::RtlFreeHeap(
-            handle.as_raw(),
-            flags.build(),
-            ptr.as_ptr().cast(),
-        )
-    };
+    let ret = unsafe { raw::RtlFreeHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast()) };
     if ret.into_bool() { Ok(()) } else { Err(ptr) }
 }
 
@@ -259,12 +251,7 @@ pub fn HeapReAlloc<T: Sized>(
     // SAFETY: `HeapHandle` guarantees a valid handle,
     // `HeapFlags<ReAlloc>` restricts to valid flags, safe
     let raw = unsafe {
-        raw::RtlReAllocateHeap(
-            handle.as_raw(),
-            flags.build(),
-            ptr.as_ptr().cast(),
-            bytes,
-        )
+        raw::RtlReAllocateHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast(), bytes)
     };
     if raw.is_null() {
         return Err(ptr);
@@ -284,8 +271,7 @@ mod tests {
     fn alloc_test() {
         let handle = GetProcessHeap();
 
-        let ptr = HeapAlloc(handle, HeapFlags::alloc(), 1)
-            .expect("HeapAlloc return null pointer");
+        let ptr = HeapAlloc(handle, HeapFlags::alloc(), 1).expect("HeapAlloc return null pointer");
 
         // SAFETY: We write a number into the memory allocated by
         // `HeapAlloc`
@@ -299,8 +285,8 @@ mod tests {
     fn realloc_test() {
         let handle = GetProcessHeap();
 
-        let mut ptr = HeapAlloc(handle, HeapFlags::alloc(), 1)
-            .expect("HeapAlloc return null pointer");
+        let mut ptr =
+            HeapAlloc(handle, HeapFlags::alloc(), 1).expect("HeapAlloc return null pointer");
 
         // SAFETY: We write a number into the memory allocated by
         // `HeapAlloc`
@@ -311,24 +297,13 @@ mod tests {
 
         // SAFETY: We write a number into the memory allocated by
         // `HeapReAlloc`
-        unsafe {
-            ptr::write(
-                ptr.as_ptr().cast::<i32>().add(1),
-                i32::MAX / 2,
-            )
-        };
+        unsafe { ptr::write(ptr.as_ptr().cast::<i32>().add(1), i32::MAX / 2) };
 
         // SAFETY: We check whether the old data was preserved
         // correctly and the new data was written after `HeapReAlloc`
         unsafe {
-            assert_eq!(
-                ptr::read(ptr.as_ptr().cast::<i32>()),
-                i32::MAX
-            );
-            assert_eq!(
-                ptr::read(ptr.as_ptr().cast::<i32>().add(1)),
-                i32::MAX / 2
-            );
+            assert_eq!(ptr::read(ptr.as_ptr().cast::<i32>()), i32::MAX);
+            assert_eq!(ptr::read(ptr.as_ptr().cast::<i32>().add(1)), i32::MAX / 2);
         }
 
         let ret = HeapFree(handle, HeapFlags::free(), ptr);
@@ -339,17 +314,13 @@ mod tests {
     fn alloc_flags_test() {
         let handle = GetProcessHeap();
 
-        let ptr: HeapPtr<i8> =
-            HeapAlloc(handle, HeapFlags::alloc().zero_memory(), 1024)
-                .expect("HeapAlloc return null pointer");
+        let ptr: HeapPtr<i8> = HeapAlloc(handle, HeapFlags::alloc().zero_memory(), 1024)
+            .expect("HeapAlloc return null pointer");
 
         for i in 0..1024 {
             // SAFETY: We check whether all 1024 bytes are zeroed as
             // the flag promises
-            assert_eq!(
-                unsafe { ptr::read(ptr.as_ptr().add(i)) },
-                0i8
-            );
+            assert_eq!(unsafe { ptr::read(ptr.as_ptr().add(i)) }, 0i8);
         }
 
         let ret = HeapFree(handle, HeapFlags::free(), ptr);

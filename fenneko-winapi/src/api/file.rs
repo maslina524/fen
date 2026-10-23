@@ -42,10 +42,7 @@ impl<Tag> Handle for FileHandle<Tag> {
 /// Mostly it always returns ``Ok()`` with the number of bytes written
 /// in it; situations where ``Err()`` is returned are kernel failures,
 /// for example the disk is full.
-pub fn WriteFile<T: CanWrite>(
-    handle: &FileHandle<T>,
-    buf: &[u8],
-) -> Result<usize, NTSTATUS> {
+pub fn WriteFile<T: CanWrite>(handle: &FileHandle<T>, buf: &[u8]) -> Result<usize, NTSTATUS> {
     let mut info = IO_STATUS_BLOCK::default();
     // SAFETY: The descriptor, buffer, and its length are always valid
     let status = unsafe {
@@ -79,11 +76,10 @@ mod tests {
 
     #[test]
     fn write_to_stdout() {
-        let handle = GetStdHandle(StdHandle::Stdout)
-            .expect("Failed to get std handle");
+        let handle = GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle");
         let string = "Hello World!\n";
-        let written = WriteFile(&handle, string.as_bytes())
-            .expect("Failed to write to the console");
+        let written =
+            WriteFile(&handle, string.as_bytes()).expect("Failed to write to the console");
         assert_eq!(written, string.len());
     }
 }

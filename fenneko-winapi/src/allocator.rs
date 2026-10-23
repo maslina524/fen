@@ -7,8 +7,7 @@ use core::{
 use crate::{
     Handle,
     api::alloc::{
-        GetProcessHeap, HeapAlloc, HeapFlags, HeapFree, HeapHandle,
-        HeapPtr, HeapReAlloc,
+        GetProcessHeap, HeapAlloc, HeapFlags, HeapFree, HeapHandle, HeapPtr, HeapReAlloc,
     },
 };
 
@@ -34,9 +33,7 @@ pub struct Allocator;
 // part of the heap are passed
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        let ptr =
-            HeapAlloc(handle(), HeapFlags::alloc(), layout.size())
-                .expect("Failed to alloc");
+        let ptr = HeapAlloc(handle(), HeapFlags::alloc(), layout.size()).expect("Failed to alloc");
         ptr.into_ptr()
     }
 
@@ -50,32 +47,18 @@ unsafe impl GlobalAlloc for Allocator {
     }
 
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        let ptr = HeapAlloc(
-            handle(),
-            HeapFlags::alloc().zero_memory(),
-            layout.size(),
-        )
-        .expect("Failed to alloc (zeroed)");
+        let ptr = HeapAlloc(handle(), HeapFlags::alloc().zero_memory(), layout.size())
+            .expect("Failed to alloc (zeroed)");
         ptr.into_ptr()
     }
 
-    unsafe fn realloc(
-        &self,
-        ptr: *mut u8,
-        _layout: Layout,
-        new_size: usize,
-    ) -> *mut u8 {
+    unsafe fn realloc(&self, ptr: *mut u8, _layout: Layout, new_size: usize) -> *mut u8 {
         // SAFETY: `ptr` passed to dealloc must point into the
         // initialized part of the heap; using the stable
         // standard library this shouldn't cause problems
         let heapptr = unsafe { HeapPtr::new(ptr) };
-        let ptr = HeapReAlloc(
-            handle(),
-            HeapFlags::realloc(),
-            heapptr,
-            new_size,
-        )
-        .expect("Failed to realloc");
+        let ptr = HeapReAlloc(handle(), HeapFlags::realloc(), heapptr, new_size)
+            .expect("Failed to realloc");
         ptr.into_ptr()
     }
 }

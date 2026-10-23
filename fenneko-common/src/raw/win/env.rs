@@ -116,8 +116,7 @@ mod tests {
 
     #[test]
     fn args_check_quotes_test() {
-        let mut args =
-            ArgsInner::new("\"Hello\" \"World\" \"\"".to_owned());
+        let mut args = ArgsInner::new("\"Hello\" \"World\" \"\"".to_owned());
         next_is!(args, "Hello");
         next_is!(args, "World");
         next_is!(args, "");
@@ -125,9 +124,7 @@ mod tests {
 
     #[test]
     fn args_check_all_test() {
-        let mut args = ArgsInner::new(
-            "git commit -m \"Initial commit\"".to_owned(),
-        );
+        let mut args = ArgsInner::new("git commit -m \"Initial commit\"".to_owned());
         next_is!(args, "git");
         next_is!(args, "commit");
         next_is!(args, "-m");
@@ -136,9 +133,7 @@ mod tests {
 
     #[test]
     fn args_splash_test() {
-        let mut args = ArgsInner::new(
-            "git commit -m \"Initial commit\"".to_owned(),
-        );
+        let mut args = ArgsInner::new("git commit -m \"Initial commit\"".to_owned());
         next_is!(args, "git");
         next_is!(args, "commit");
         next_is!(args, "-m");

@@ -24,16 +24,14 @@ use crate::{actions::Action, render::Renderable};
 extern crate alloc;
 
 #[global_allocator]
-static ALLOCATOR: winapi::allocator::Allocator =
-    winapi::allocator::Allocator;
+static ALLOCATOR: winapi::allocator::Allocator = winapi::allocator::Allocator;
 
 fn help(stdout: &mut Stdout) {
     let _ = actions::Help::run(None).unwrap().render_console(stdout);
 }
 
 fn version(stdout: &mut Stdout) {
-    let _ =
-        options::Version::run(None).unwrap().render_console(stdout);
+    let _ = options::Version::run(None).unwrap().render_console(stdout);
 }
 
 fn main() -> i32 {

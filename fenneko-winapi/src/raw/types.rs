@@ -16,6 +16,7 @@ pub type USHORT = u16;
 pub type UINT = u32;
 pub type ULONG = u32;
 pub type ULONG_PTR = usize;
+pub type LARGE_INTEGER = i64;
 
 // Strings
 pub type PWSTR = *const u16;
@@ -126,4 +127,23 @@ impl Default for IO_STATUS_BLOCK {
         // SAFETY: All fields can be zeroed
         unsafe { mem::zeroed() }
     }
+}
+
+#[repr(C)]
+pub struct FILE_BASIC_INFORMATION {
+    pub CreationTime: LARGE_INTEGER,
+    pub LastAccessTime: LARGE_INTEGER,
+    pub LastWriteTime: LARGE_INTEGER,
+    pub ChangeTime: LARGE_INTEGER,
+    pub FileAttributes: ULONG,
+}
+
+#[repr(C)]
+pub struct OBJECT_ATTRIBUTES {
+    pub Length: ULONG,
+    pub RootDirectory: HANDLE,
+    pub ObjectName: *const UNICODE_STRING,
+    pub Attributes: ULONG,
+    pub SecurityDescriptor: PVOID,
+    pub SecurityQualityOfService: PVOID,
 }

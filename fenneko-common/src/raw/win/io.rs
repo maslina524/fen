@@ -1,9 +1,7 @@
 use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
 use winapi::api::{
-    console::{
-        CodePage, GetStdHandle, SetConsoleOutputCP, StdHandle,
-    },
+    console::{CodePage, GetStdHandle, SetConsoleOutputCP, StdHandle},
     file::{FileHandle, Write, WriteFile},
 };
 
@@ -12,13 +10,11 @@ pub static IS_UTF8: AtomicBool = AtomicBool::new(false);
 pub type RawHandle = FileHandle<Write>;
 
 pub fn stdout() -> RawHandle {
-    GetStdHandle(StdHandle::Stdout)
-        .expect("Failed to get std handle (stdout)")
+    GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle (stdout)")
 }
 
 pub fn stderr() -> RawHandle {
-    GetStdHandle(StdHandle::Stderr)
-        .expect("Failed to get std handle (stderr)")
+    GetStdHandle(StdHandle::Stderr).expect("Failed to get std handle (stderr)")
 }
 
 /// Returns the number of bytes written.

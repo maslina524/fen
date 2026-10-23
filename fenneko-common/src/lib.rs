@@ -11,3 +11,4 @@ pub mod env;
 pub mod io;
 pub mod macros;
 pub mod path;
+pub mod os;

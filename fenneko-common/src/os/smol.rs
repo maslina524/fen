@@ -6,7 +6,7 @@ use crate::raw::os::OsStr;
 const INLINE_CAP: usize = 23;
 
 #[repr(u8)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum InlineLen {
     _V1 = 1,
     _V2 = 2,
@@ -48,7 +48,7 @@ impl TryFrom<u8> for InlineLen {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq, Eq)]
 pub enum Repr {
     #[default]
     Empty,
@@ -61,7 +61,7 @@ pub enum Repr {
 }
 
 /// [`SmolOsStr`] only stores the string, does not modify it
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq, Eq)]
 pub struct SmolOsStr(Repr);
 
 impl SmolOsStr {

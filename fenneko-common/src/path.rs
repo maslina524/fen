@@ -76,7 +76,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     pub fn with_os_str<R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
         // SAFETY: Match against the correct buffer sizes
         unsafe {
-                match self.len() {
+            match self.len() {
                 0..=24 => self.with_buf_unchecked::<24, _>(f),
                 25..=32 => self.with_buf_unchecked::<32, _>(f),
                 33..=64 => self.with_buf_unchecked::<64, _>(f),
@@ -94,7 +94,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 
     /// # Safety
-    /// 
+    ///
     /// Need to guarantee that `self.len() <= SIZE`.
     #[inline(never)]
     unsafe fn with_buf_unchecked<const SIZE: usize, R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
@@ -105,12 +105,19 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
 }
 
 #[repr(transparent)]
-#[derive(Clone)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct Path {
     inner: SmolOsStr,
 }
 
 impl Path {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            inner: SmolOsStr::empty(),
+        }
+    }
+
     #[must_use]
     pub const fn from_static(s: &'static OsStr) -> Self {
         Self {
@@ -170,6 +177,116 @@ macro_rules! impl_from_for_path {
 
 impl_from_for_path!(&OsStr, OsString);
 
+#[derive(Clone, Default, PartialEq, Eq)]
+pub struct PathBuf {
+    inner: OsString
+}
+
+impl PathBuf {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { inner: OsString::new() }
+    }
+
+    #[must_use]
+    pub fn with_capacity(cap: usize) -> Self {
+        Self { inner: OsString::with_capacity(cap) }
+    }
+
+    #[must_use]
+    pub fn as_path(&self) -> Path {
+        Path::from(self.inner.as_str())
+    }
+
+    #[must_use]
+    pub fn as_os_str(&self) -> &OsStr {
+        &self.inner
+    }
+
+    #[must_use]
+    pub const fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    #[must_use]
+    pub fn has_trailing_sep(&self) -> bool {
+        self.inner.ends_with(['\\', '/'])
+    }
+
+    pub fn pop_trailing_sep(&mut self) -> bool {
+        if !self.has_trailing_sep() {
+            return false;
+        }
+        self.inner.pop().is_some()
+    }
+
+    #[must_use]
+    pub fn as_components(&self) -> Components<'_> {
+        Components::new(&self.inner)
+    }
+
+    pub fn pop(&mut self) -> Option<Path> {
+        while self.pop_trailing_sep() {}
+
+        let bytes = self.inner.as_bytes();
+        let mut pos = 1;
+        loop {
+            if pos > bytes.len() {
+                return None;
+            }
+            let ch = bytes[bytes.len() - pos];
+            if ch == b'\\' || ch == b'/' {
+                let idx = bytes.len() - pos;
+                let osstr = &self.inner[idx + 1..];
+                let path: Path = osstr.into();
+                self.inner.truncate(idx);
+                return Some(path);
+            }
+            pos += 1;
+        }
+    }
+
+    #[must_use]
+    pub fn join(mut self, item: &Path) -> Self {
+        let item_comp = item.as_components();
+        self.inner.reserve(item_comp.len());
+
+        for i in item_comp {
+            if i == ".." {
+                self.pop();
+                continue;
+            }
+            if i != "." {
+                if !self.has_trailing_sep() {
+                    self.inner.push('/');
+                }
+                self.inner.push_str(i);
+            }
+        }
+
+        self
+    }
+}
+
+macro_rules! impl_from_for_pathbuf {
+    ($($typ:ty),+ $(,)?) => {
+        $(
+            impl From<$typ> for PathBuf {
+                fn from(value: $typ) -> Self {
+                    Self { inner: ::alloc::string::ToString::to_string(&value) }
+                }
+            }
+        )+
+    };
+}
+
+impl_from_for_pathbuf!(&OsStr, OsString);
+
 pub struct Components<'c> {
     inner: &'c [u8],
     pos: usize,
@@ -218,6 +335,17 @@ impl<'c> Iterator for Components<'c> {
 
             self.pos += 1;
         }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let rem = self.inner.len() - self.pos;
+        (rem, Some(rem))
+    }
+}
+
+impl ExactSizeIterator for Components<'_> {
+    fn len(&self) -> usize {
+        self.inner.len()
     }
 }
 
@@ -298,5 +426,18 @@ mod tests {
                 format!("{}{file}", path.as_os_str())
             );
         }
+    }
+
+    #[test]
+    fn pathbuf_pop_join_test() {
+        let pathbuf = PathBuf::from("C:/Users/ferris");
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
+
+        let mut pathbuf = pathbuf.join(&Path::from("Rust"));
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris/Rust");
+
+        let poped = pathbuf.pop();
+        assert_eq!(poped, Some(Path::from("Rust")));
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
     }
 }

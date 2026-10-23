@@ -4,9 +4,11 @@
 #[cfg(not(test))]
 mod panic_impl {
     use core::panic::PanicInfo;
+    use common::prelude::*;
 
     #[panic_handler]
-    const fn panic(_info: &PanicInfo) -> ! {
+    fn panic(info: &PanicInfo) -> ! {
+        println!("{}", info.message());
         loop {}
     }
 }

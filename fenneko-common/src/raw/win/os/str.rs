@@ -1,45 +1,59 @@
-use core::{fmt::{self, Write}, mem, ops::{Index, Range, RangeFrom, RangeFull, RangeTo}, slice};
 use alloc::{boxed::Box, sync::Arc};
+use core::{
+    fmt::{self, Write}, mem, ops::{Index, Range, RangeFrom, RangeFull, RangeTo}, ptr, slice,
+};
 
 use crate::raw::os::{OsString, ToOsString};
 
 #[derive(PartialEq, Eq)]
 #[repr(transparent)]
 pub struct OsStr {
-    inner: [u16]
+    inner: [u16],
 }
 
 impl OsStr {
-    pub fn empty() -> &'static OsStr {
+    #[must_use]
+    pub const fn empty() -> &'static Self {
         Self::from_slice(&[])
     }
 
-    pub fn from_slice(s: &[u16]) -> &OsStr {
+    #[must_use]
+    pub const fn from_slice(s: &[u16]) -> &Self {
         // SAFETY: Layout `OsStr` == [u16] (repr(transparent))
-        unsafe { &*(s as *const [u16] as *const OsStr) }
+        unsafe { &*(ptr::from_ref::<[u16]>(s) as *const Self) }
     }
 
-    pub unsafe fn from_utf16_unchecked(s: &[u8]) -> &Self {
-        let len = mem::size_of_val(&s);
+    /// # Safety
+    /// 
+    /// You need to guarantee that the slice is valid UTF-16
+    #[must_use]
+    pub const unsafe fn from_utf16_unchecked(s: &[u8]) -> &Self {
+        let len = s.len() / 2;
         let ptr = s.as_ptr();
+        // SAFETY: Caller guarantees s is a valid UTF-16 byte buffer
         let slice = unsafe { slice::from_raw_parts(ptr.cast(), len) };
         Self::from_slice(slice)
     }
 
-    pub fn as_slice(&self) -> &[u16] {
+    #[must_use]
+    pub const fn as_slice(&self) -> &[u16] {
         &self.inner
     }
 
+    #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
         let len = mem::size_of_val(&self.inner);
         let ptr = self.inner.as_ptr();
+        // SAFETY: ptr and length are correct, safe
         unsafe { slice::from_raw_parts(ptr.cast(), len) }
     }
 
+    #[must_use]
     pub const fn len(&self) -> usize {
         self.inner.len()
     }
 
+    #[must_use]
     pub fn is_char_boundary(&self, index: usize) -> bool {
         if index == 0 || index == self.len() {
             return true;
@@ -51,19 +65,22 @@ impl OsStr {
         !(0xDC00..=0xDFFF).contains(&i)
     }
 
+    #[must_use]
     pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    pub fn chars(&self) -> Chars {
+    #[must_use]
+    pub fn chars(&self) -> Chars<'_> {
         Chars::new(self.as_slice())
     }
 
-    pub fn into_boxed_str(&self) -> Box<OsStr> {
+    #[must_use]
+    pub fn as_boxed_str(&self) -> Box<Self> {
         let boxed: Box<[u16]> = self.as_slice().into();
         let raw: *mut [u16] = Box::into_raw(boxed);
         // SAFETY: Layout `OsStr` == [u16] (repr(transparent))
-        unsafe { Box::from_raw(raw as *mut OsStr) }
+        unsafe { Box::from_raw(raw as *mut Self) }
     }
 }
 
@@ -88,7 +105,7 @@ impl fmt::Debug for OsStr {
 }
 
 pub struct Chars<'c> {
-    iter: slice::Iter<'c, u16>
+    iter: slice::Iter<'c, u16>,
 }
 
 impl<'c> Chars<'c> {
@@ -108,11 +125,17 @@ impl<'c> Chars<'c> {
     }
 }
 
-impl<'c> Iterator for Chars<'c> {
+impl Iterator for Chars<'_> {
     type Item = char;
+
     fn next(&mut self) -> Option<Self::Item> {
-        // SAFETY: `OsStr` stores valid UTF16 and forms valid chars
+        // SAFETY: OsStr stores valid UTF-16, so next_point yields valid chars
         self.next_point().map(|ch| unsafe { char::from_u32_unchecked(ch) })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (lower, upper) = self.iter.size_hint();
+        (lower.div_ceil(2), upper)
     }
 }
 
@@ -130,57 +153,52 @@ impl ToOsString for &OsStr {
 
 impl PartialEq<str> for OsStr {
     fn eq(&self, other: &str) -> bool {
-        let self_chars = self.chars();
-        let other_chars = other.chars();
-        if self_chars.size_hint().0 != other_chars.size_hint().0 {
-            return false;
-        }
-
-        for (s, o) in self_chars.zip(other_chars) {
-            if s != o {
-                return false;
-            }
-        }
-
-        true
+        self.chars().eq(other.chars())
     }
 }
 
-impl AsRef<OsStr> for OsStr {
-    fn as_ref(&self) -> &OsStr {
+impl AsRef<Self> for OsStr {
+    fn as_ref(&self) -> &Self {
         self
     }
 }
 
 impl From<&OsStr> for Arc<OsStr> {
-    fn from(s: &OsStr) -> Arc<OsStr> {
-        let arc: Arc<[u8]> = Arc::from(s.as_bytes());
-        unsafe { Arc::from_raw(Arc::into_raw(arc) as *const OsStr) }
+    fn from(s: &OsStr) -> Self {
+        let arc: Arc<[u16]> = Arc::from(s.as_slice());
+        // SAFETY: Layout `OsStr` == [u16] (repr(transparent))
+        unsafe { Self::from_raw(Arc::into_raw(arc) as *const OsStr) }
     }
 }
 
 impl Index<Range<usize>> for OsStr {
-    type Output = OsStr;
-    fn index(&self, range: Range<usize>) -> &OsStr {
-        OsStr::from_slice(&self.as_slice()[range])
+    type Output = Self;
+
+    fn index(&self, range: Range<usize>) -> &Self {
+        Self::from_slice(&self.as_slice()[range])
     }
 }
 
 impl Index<RangeFrom<usize>> for OsStr {
-    type Output = OsStr;
-    fn index(&self, range: RangeFrom<usize>) -> &OsStr {
-        OsStr::from_slice(&self.as_slice()[range])
+    type Output = Self;
+
+    fn index(&self, range: RangeFrom<usize>) -> &Self {
+        Self::from_slice(&self.as_slice()[range])
     }
 }
 
 impl Index<RangeTo<usize>> for OsStr {
-    type Output = OsStr;
-    fn index(&self, range: RangeTo<usize>) -> &OsStr {
-        OsStr::from_slice(&self.as_slice()[range])
+    type Output = Self;
+
+    fn index(&self, range: RangeTo<usize>) -> &Self {
+        Self::from_slice(&self.as_slice()[range])
     }
 }
 
 impl Index<RangeFull> for OsStr {
-    type Output = OsStr;
-    fn index(&self, _: RangeFull) -> &OsStr { self }
+    type Output = Self;
+
+    fn index(&self, _: RangeFull) -> &Self {
+        self
+    }
 }

@@ -1,5 +1,5 @@
 use alloc::sync::Arc;
-use core::{ffi::CStr, mem, ops::Deref, slice};
+use core::{mem, ops::Deref, slice};
 
 use crate::raw::os::{OsStr, OsString};
 
@@ -85,8 +85,9 @@ impl SmolOsStr {
             Repr::Heap(a) => a.as_bytes(),
             Repr::Inline { len, data } => {
                 let utf16 = &data[..*len as usize];
-                let len = mem::size_of_val(&utf16);
+                let len = mem::size_of_val(utf16);
                 let ptr = utf16.as_ptr();
+                // SAFETY: `SmolOsStr` is created from a valid `OsStr`, safe
                 unsafe { slice::from_raw_parts(ptr.cast(), len) }
             },
             Repr::Static(s) => s.as_bytes(),
@@ -115,48 +116,44 @@ fn str_to_arr(s: &OsStr) -> [u16; INLINE_CAP] {
     out
 }
 
-macro_rules! impl_from_string {
-    ($($typ:ty),+ $(,)?) => {$(
-        impl From<$typ> for SmolOsStr {
-            fn from(value: $typ) -> Self {
-                let repr = if value.len() == 0 {
-                    Repr::Empty
-                } else if value.len() > INLINE_CAP {
-                    Repr::Heap(value.into())
-                } else {
-                    Repr::Inline {
-                        len: (value.len() as u8).try_into().unwrap(),
-                        data: str_to_arr(&value)
-                    }
-                };
-
-                Self(repr)
-            }
-        }
-    )+};
-}
-
-impl_from_string!(OsString, &OsStr);
-
-impl From<&CStr> for SmolOsStr {
-    fn from(value: &CStr) -> Self {
-        let len = value.count_bytes();
-        let repr = if len == 0 {
+#[allow(clippy::fallible_impl_from)]
+impl From<&OsStr> for SmolOsStr {
+    fn from(value: &OsStr) -> Self {
+        let repr = if value.is_empty() {
             Repr::Empty
-        } else if len > INLINE_CAP {
-            let bytes = value.to_bytes();
-            let s = unsafe { OsStr::from_utf16_unchecked(bytes) };
-            Repr::Heap(s.into())
+        } else if value.len() > INLINE_CAP {
+            Repr::Heap(value.into())
         } else {
-            let bytes = value.to_bytes();
-            let s = unsafe { OsStr::from_utf16_unchecked(bytes) };
             Repr::Inline {
-                len: (len as u8).try_into().unwrap(),
-                data: str_to_arr(s),
+                len: (value.len() as u8).try_into().unwrap(),
+                data: str_to_arr(value)
             }
         };
-
         Self(repr)
+    }
+}
+
+#[allow(clippy::fallible_impl_from)]
+impl From<OsString> for SmolOsStr {
+    fn from(value: OsString) -> Self {
+        let repr = if value.is_empty() {
+            Repr::Empty
+        } else if value.len() > INLINE_CAP {
+            Repr::Heap(value.into())
+        } else {
+            Repr::Inline {
+                len: (value.len() as u8).try_into().unwrap(),
+                data: str_to_arr(value.as_os_str())
+            }
+        };
+        Self(repr)
+    }
+}
+
+impl From<&str> for SmolOsStr {
+    fn from(value: &str) -> Self {
+        let osstring: OsString = value.into();
+        Self::from(osstring)
     }
 }
 

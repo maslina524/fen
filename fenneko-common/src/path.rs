@@ -19,7 +19,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     #[must_use]
     pub fn new<T: AsRef<OsStr> + ?Sized>(inner: [&'cp T; N]) -> Self {
         Self {
-            inner: inner.map(|p| p.as_ref()),
+            inner: inner.map(AsRef::as_ref),
         }
     }
 
@@ -58,27 +58,32 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
 
     #[must_use]
     pub fn as_os_str<'o>(&self, buf: &'o mut [u8]) -> Option<&'o OsStr> {
-        let len = self.len();
-        if buf.len() < len {
-            return None;
-        }
-
         let mut pos = 0;
         for item in self.as_slice() {
             let bytes = item.as_bytes();
-            buf[pos..pos + bytes.len()].copy_from_slice(bytes);
-            pos += bytes.len();
+            let end = pos + bytes.len();
+            if end > buf.len() {
+                return None;
+            }
+            buf[pos..end].copy_from_slice(bytes);
+            pos = end;
         }
+        // SAFETY: we copied valid UTF-16 byte data from valid OsStr's
+        Some(unsafe { OsStr::from_utf16_unchecked(&buf[..pos]) })
+    }
 
-        // SAFETY: Store valid OsStr, safe
-        let osstr = unsafe { OsStr::from_utf16_unchecked(&buf[..len]) };
-        Some(osstr)
+    fn byte_len(&self) -> usize {
+        self.as_slice()
+            .iter()
+            .map(|s| s.as_bytes().len())
+            .sum()
     }
 
     pub fn with_os_str<R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
-        // SAFETY: Match against the correct buffer sizes
+        // SAFETY: buffer size is chosen using the same length metric
+        // that `as_os_str` uses
         unsafe {
-            match self.len() {
+            match self.byte_len() {
                 0..=24 => self.with_buf_unchecked::<24, _>(f),
                 25..=32 => self.with_buf_unchecked::<32, _>(f),
                 33..=64 => self.with_buf_unchecked::<64, _>(f),
@@ -95,14 +100,19 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
         }
     }
 
-    /// # Safety
-    ///
-    /// Need to guarantee that `self.len() <= SIZE`.
     #[inline(never)]
-    unsafe fn with_buf_unchecked<const SIZE: usize, R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
-        assert!(self.len() <= SIZE);
+    unsafe fn with_buf_unchecked<const SIZE: usize, R>(
+        &self,
+        f: impl FnOnce(&OsStr) -> R,
+    ) -> R {
+        assert!(self.byte_len() <= SIZE);
+
         let mut buf = [0u8; SIZE];
-        f(self.as_os_str(&mut buf).unwrap())
+        let os_str = self
+            .as_os_str(&mut buf)
+            .expect("buffer sized using ConcatPath::byte_len");
+
+        f(os_str)
     }
 }
 
@@ -165,6 +175,18 @@ impl fmt::Debug for Path {
     }
 }
 
+impl From<&str> for Path {
+    fn from(value: &str) -> Self {
+        Self { inner: SmolOsStr::from(value) }
+    }
+}
+
+impl AsRef<Self> for Path {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
 macro_rules! impl_from_for_path {
     ($($typ:ty),+ $(,)?) => {
         $(
@@ -181,18 +203,22 @@ impl_from_for_path!(&OsStr, OsString);
 
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct PathBuf {
-    inner: OsString
+    inner: OsString,
 }
 
 impl PathBuf {
     #[must_use]
     pub const fn new() -> Self {
-        Self { inner: OsString::new() }
+        Self {
+            inner: OsString::new(),
+        }
     }
 
     #[must_use]
     pub fn with_capacity(cap: usize) -> Self {
-        Self { inner: OsString::with_capacity(cap) }
+        Self {
+            inner: OsString::with_capacity(cap),
+        }
     }
 
     #[must_use]
@@ -201,8 +227,8 @@ impl PathBuf {
     }
 
     #[must_use]
-    pub fn as_os_str(&self) -> &OsStr {
-        &self.inner
+    pub const fn as_os_str(&self) -> &OsStr {
+        self.inner.as_os_str()
     }
 
     #[must_use]
@@ -227,7 +253,7 @@ impl PathBuf {
 
     #[must_use]
     pub fn has_trailing_sep(&self) -> bool {
-        self.inner.ends_with(['\\', '/'])
+        self.inner.ends_with_char('\\') || self.inner.ends_with_char('/')
     }
 
     pub fn pop_trailing_sep(&mut self) -> bool {
@@ -238,24 +264,23 @@ impl PathBuf {
     }
 
     #[must_use]
-    pub fn as_components(&self) -> Components<'_> {
-        Components::new(&self.inner)
+    pub const fn as_components(&self) -> Components<'_> {
+        Components::new(self.inner.as_os_str())
     }
 
     pub fn pop(&mut self) -> Option<Path> {
         while self.pop_trailing_sep() {}
 
-        let bytes = self.inner.as_bytes();
+        let units = self.inner.as_slice();
         let mut pos = 1;
         loop {
-            if pos > bytes.len() {
+            if pos > units.len() {
                 return None;
             }
-            let ch = bytes[bytes.len() - pos];
-            if ch == b'\\' || ch == b'/' {
-                let idx = bytes.len() - pos;
-                let osstr = &self.inner[idx + 1..];
-                let path: Path = osstr.into();
+            let ch = units[units.len() - pos];
+            if ch == b'/' as u16 || ch == b'\\' as u16 {
+                let idx = units.len() - pos;
+                let path = Path::from(&self.inner[idx + 1..]);
                 self.inner.truncate(idx);
                 return Some(path);
             }
@@ -270,10 +295,7 @@ impl PathBuf {
 
     #[must_use]
     fn join_inner(mut self, item: &Path) -> Self {
-        let item_comp = item.as_components();
-        self.inner.reserve(item_comp.len());
-
-        for i in item_comp {
+        for i in item.as_components() {
             if i == ".." {
                 self.pop();
                 continue;
@@ -285,7 +307,6 @@ impl PathBuf {
                 self.inner.push_os_str(i);
             }
         }
-
         self
     }
 }
@@ -305,23 +326,14 @@ macro_rules! impl_from_for_pathbuf {
 impl_from_for_pathbuf!(&OsStr, OsString);
 
 pub struct Components<'c> {
-    inner: &'c [u8],
+    inner: &'c [u16],
     pos: usize,
 }
 
 impl<'c> Components<'c> {
     #[must_use]
     pub const fn new(inner: &'c OsStr) -> Self {
-        Self {
-            inner: inner.as_bytes(),
-            pos: 0,
-        }
-    }
-
-    fn build_os_str(&self, start: usize) -> &'c OsStr {
-        let slice = &self.inner[start..self.pos];
-        // SAFETY: Bytes are created from OsStr, safe
-        unsafe { OsStr::from_utf16_unchecked(slice) }
+        Self { inner: inner.as_slice(), pos: 0 }
     }
 }
 
@@ -329,40 +341,25 @@ impl<'c> Iterator for Components<'c> {
     type Item = &'c OsStr;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.pos >= self.inner.len() {
+            return None;
+        }
         let start = self.pos;
-
-        loop {
-            let pos = self.pos;
-            if pos >= self.inner.len() {
-                return if pos == start {
-                    None
-                } else {
-                    let osstr = self.build_os_str(start);
-                    self.pos += 1;
-                    Some(osstr)
-                };
-            }
-
+        while self.pos < self.inner.len() {
             let ch = self.inner[self.pos];
-            if ch == b'\\' || ch == b'/' {
-                let osstr = self.build_os_str(start);
+            if ch == b'/' as u16 || ch == b'\\' as u16 {
+                let out = OsStr::from_slice(&self.inner[start..self.pos]);
                 self.pos += 1;
-                return Some(osstr);
+                return Some(out);
             }
-
             self.pos += 1;
         }
+        Some(OsStr::from_slice(&self.inner[start..self.pos]))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let rem = self.inner.len() - self.pos;
-        (rem, Some(rem))
-    }
-}
-
-impl ExactSizeIterator for Components<'_> {
-    fn len(&self) -> usize {
-        self.inner.len()
+        (usize::from(rem > 0), Some(rem))
     }
 }
 
@@ -370,34 +367,43 @@ impl ExactSizeIterator for Components<'_> {
 mod tests {
     use super::*;
 
+    fn with_concat<R>(f: impl FnOnce(ConcatPath<'_, 3>) -> R) -> R {
+        let p = OsString::from("/path");
+        let t = OsString::from("/to");
+        let h = OsString::from("/heart");
+        f(ConcatPath::new([p.as_os_str(), t.as_os_str(), h.as_os_str()]))
+    }
+
     #[test]
     fn concat_path_len_test() {
-        let concat = ConcatPath::new(["/path", "/to", "/heart"]);
-        assert_eq!(concat.len(), "/path/to/heart".len());
-        assert_eq!(concat.count(), 3);
+        with_concat(|concat| {
+            assert_eq!(concat.len(), "/path/to/heart".chars().count());
+            assert_eq!(concat.count(), 3);
+        });
     }
 
     #[test]
     fn concat_as_os_str_test() {
-        let concat = ConcatPath::new(["/path", "/to", "/heart"]);
-        let mut buf = [0u8; 128];
-        let as_str = concat.as_os_str(&mut buf).expect("Buf too small");
-        assert_eq!(as_str, "/path/to/heart");
+        with_concat(|concat| {
+            let mut buf = [0u8; 128];
+            let as_str = concat.as_os_str(&mut buf).expect("Buf too small");
+            assert_eq!(as_str, "/path/to/heart");
+        });
     }
 
     #[test]
     fn concat_as_boxed_os_str_test() {
-        let concat = ConcatPath::new(["/path", "/to", "/heart"]);
-        let as_str = concat.as_boxed_os_str();
-        assert_eq!(as_str.as_ref(), "/path/to/heart");
+        with_concat(|concat| {
+            let as_str = concat.as_boxed_os_str();
+            assert_eq!(as_str.as_ref(), "/path/to/heart");
+        });
     }
 
     #[test]
     fn concat_with_os_str() {
-        let concat = ConcatPath::new(["/path", "/to", "/heart"]);
-        concat.with_os_str(|s| {
-            assert_eq!(s, "/path/to/heart");
-        })
+        with_concat(|concat| {
+            concat.with_os_str(|s| assert_eq!(s, "/path/to/heart"));
+        });
     }
 
     #[test]
@@ -405,11 +411,9 @@ mod tests {
         let path = Path::from("C:/Users/ferris/Rust/learn.md");
         let mut components = path.as_components();
 
-        assert_eq!(components.next(), "C:".into());
-        assert_eq!(components.next(), "Users".into());
-        assert_eq!(components.next(), "ferris".into());
-        assert_eq!(components.next(), "Rust".into());
-        assert_eq!(components.next(), "learn.md".into());
+        for expected in ["C:", "Users", "ferris", "Rust", "learn.md"] {
+            assert_eq!(components.next(), Some(Path::from(expected).as_os_str()));
+        }
         assert_eq!(components.next(), None);
     }
 
@@ -418,17 +422,15 @@ mod tests {
         let path = Path::from("C:/Users/ferris/Изучение Раст/Урок №1.md");
         let mut components = path.as_components();
 
-        assert_eq!(components.next(), "C:".into());
-        assert_eq!(components.next(), "Users".into());
-        assert_eq!(components.next(), "ferris".into());
-        assert_eq!(components.next(), "Изучение Раст".into());
-        assert_eq!(components.next(), "Урок №1.md".into());
+        for expected in ["C:", "Users", "ferris", "Изучение Раст", "Урок №1.md"] {
+            assert_eq!(components.next(), Some(Path::from(expected).as_os_str()));
+        }
         assert_eq!(components.next(), None);
     }
 
     #[test]
     fn path_as_concat_path_test() {
-        static FILES: [OsString; 4] = [
+        let files = [
             OsString::from("lesson-1.md"),
             OsString::from("lesson-2.md"),
             OsString::from("lesson-3.md"),
@@ -436,43 +438,41 @@ mod tests {
         ];
         let path = Path::from("C:/Users/ferris/Rust/");
 
-        for file in FILES {
-            let concated = path.as_concat_path(&file);
-            assert_eq!(
-                concated.as_boxed_os_str().as_ref(),
-                format!("{}{file}", path.as_os_str())
-            );
+        for file in &files {
+            let concated = path.as_concat_path(file.as_os_str());
+            let expected = format!("{}{file}", path.as_os_str());
+            assert_eq!(concated.as_boxed_os_str().as_ref(), expected.as_str());
         }
     }
 
     #[test]
     fn pathbuf_pop_join_test() {
-        let pathbuf = PathBuf::from("C:/Users/ferris");
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
+        let pathbuf = PathBuf::from(OsString::from("C:/Users/ferris"));
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris").as_os_str());
 
-        let mut pathbuf = pathbuf.join("Rust");
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris/Rust");
+        let mut pathbuf = pathbuf.join(&Path::from("Rust"));
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris/Rust").as_os_str());
 
         let poped = pathbuf.pop();
         assert_eq!(poped, Some(Path::from("Rust")));
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris").as_os_str());
     }
 
     #[test]
     fn pathbuf_super_join_test() {
-        let pathbuf = PathBuf::from("C:/Users/ferris");
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
+        let pathbuf = PathBuf::from(OsString::from("C:/Users/ferris"));
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris").as_os_str());
 
-        let pathbuf = pathbuf.join("Rust");
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris/Rust");
+        let pathbuf = pathbuf.join(&Path::from("Rust"));
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris/Rust").as_os_str());
 
-        let pathbuf = pathbuf.join("../C");
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris/C");
+        let pathbuf = pathbuf.join(&Path::from("../C"));
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris/C").as_os_str());
 
-        let pathbuf = pathbuf.join("../../Edmund");
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/Edmund");
+        let pathbuf = pathbuf.join(&Path::from("../../Edmund"));
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/Edmund").as_os_str());
 
-        let pathbuf = pathbuf.join("./Mewgenics");
-        assert_eq!(pathbuf.as_os_str(), "C:/Users/Edmund/Mewgenics");
+        let pathbuf = pathbuf.join(&Path::from("./Mewgenics"));
+        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/Edmund/Mewgenics").as_os_str());
     }
 }

@@ -9,10 +9,12 @@ pub static IS_UTF8: AtomicBool = AtomicBool::new(false);
 
 pub type RawHandle = FileHandle<Write>;
 
+#[must_use]
 pub fn stdout() -> RawHandle {
     GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle (stdout)")
 }
 
+#[must_use]
 pub fn stderr() -> RawHandle {
     GetStdHandle(StdHandle::Stderr).expect("Failed to get std handle (stderr)")
 }

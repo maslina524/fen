@@ -4,7 +4,7 @@
 extern crate alloc;
 
 pub mod prelude;
-pub(crate) mod raw;
+pub mod raw;
 
 // Public api
 pub mod env;

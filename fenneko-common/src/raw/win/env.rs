@@ -14,6 +14,7 @@ pub struct ArgsInner {
 }
 
 impl ArgsInner {
+    #[must_use]
     pub fn new(source: String) -> Self {
         let chars = source.chars().collect();
         Self {
@@ -101,6 +102,7 @@ impl Iterator for ArgsInner {
     }
 }
 
+#[must_use]
 pub fn args_string() -> String {
     GetCommandLine()
 }

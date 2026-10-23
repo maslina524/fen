@@ -90,6 +90,16 @@ impl SmolOsStr {
             Repr::Static(s) => s,
         }
     }
+
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        match &self.0 {
+            Repr::Empty => &[],
+            Repr::Heap(a) => a.as_bytes(),
+            Repr::Inline { len, data } => &data[..*len as usize],
+            Repr::Static(s) => s.as_bytes(),
+        }
+    }
 }
 
 impl Deref for SmolOsStr {

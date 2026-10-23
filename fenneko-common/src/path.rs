@@ -1,6 +1,8 @@
+use core::fmt;
+
 use alloc::boxed::Box;
 
-use crate::raw::os::{OsStr, OsString};
+use crate::{os::SmolOsStr, raw::os::{OsStr, OsString}};
 
 #[repr(transparent)]
 #[derive(Clone)]
@@ -67,6 +69,63 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 }
 
+#[repr(transparent)]
+#[derive(Clone)]
+pub struct Path {
+    inner: SmolOsStr
+}
+
+impl Path {
+    #[must_use]
+    pub const fn from_static(s: &'static OsStr) -> Self {
+        Self { inner: SmolOsStr::from_static(s) }
+    }
+
+    #[must_use]
+    pub fn as_os_str(&self) -> &OsStr {
+        self.inner.as_os_str()
+    }
+
+    #[must_use]
+    pub const fn as_smol_os_str(&self) -> &SmolOsStr {
+        &self.inner
+    }
+
+    #[must_use]
+    pub fn as_bytes(&self) -> &[u8] {
+        self.inner.as_bytes()
+    }
+}
+
+impl fmt::Display for Path {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner)
+    }
+}
+
+impl fmt::Debug for Path {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.inner)
+    }
+}
+
+macro_rules! impl_from_for_path {
+    ($($typ:ty),+ $(,)?) => {
+        $(
+            impl From<$typ> for Path {
+                fn from(value: $typ) -> Self {
+                    Self { inner: SmolOsStr::from(value) }
+                }
+            } 
+        )+
+    };
+}
+
+impl_from_for_path!(
+    &OsStr,
+    OsString,
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -79,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn as_str_test() {
+    fn concat_as_str_test() {
         let concat = ConcatPath::new(["/path", "/to", "/heart"]);
         let mut buf = [0u8; 128];
         let as_str = concat.as_str(&mut buf).expect("Buf too small");

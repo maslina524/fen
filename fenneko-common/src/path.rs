@@ -3,7 +3,10 @@ use core::fmt;
 
 use crate::{
     os::SmolOsStr,
-    raw::os::{OsStr, OsString},
+    raw::{
+        env::consts::MAX_PATH_LEN,
+        os::{OsStr, OsString},
+    },
 };
 
 #[repr(transparent)]
@@ -40,7 +43,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 
     #[must_use]
-    pub fn as_boxed_str(&self) -> Box<OsStr> {
+    pub fn as_boxed_os_str(&self) -> Box<OsStr> {
         let len = self.len();
         let mut osstring = OsString::with_capacity(len);
 
@@ -52,7 +55,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 
     #[must_use]
-    pub fn as_str<'o>(&self, buf: &'o mut [u8]) -> Option<&'o OsStr> {
+    pub fn as_os_str<'o>(&self, buf: &'o mut [u8]) -> Option<&'o OsStr> {
         let len = self.len();
         if buf.len() < len {
             return None;
@@ -68,6 +71,36 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
         // SAFETY: Store valid OsStr, safe
         let osstr = unsafe { OsStr::from_utf8_unchecked(&buf[..len]) };
         Some(osstr)
+    }
+
+    pub fn with_os_str<R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
+        // SAFETY: Match against the correct buffer sizes
+        unsafe {
+                match self.len() {
+                0..=24 => self.with_buf_unchecked::<24, _>(f),
+                25..=32 => self.with_buf_unchecked::<32, _>(f),
+                33..=64 => self.with_buf_unchecked::<64, _>(f),
+                65..=128 => self.with_buf_unchecked::<128, _>(f),
+                129..=256 => self.with_buf_unchecked::<256, _>(f),
+                257..=512 => self.with_buf_unchecked::<512, _>(f),
+                513..=1024 => self.with_buf_unchecked::<1024, _>(f),
+                1025..=2048 => self.with_buf_unchecked::<2048, _>(f),
+                2049..=4096 => self.with_buf_unchecked::<4096, _>(f),
+                4097..=8192 => self.with_buf_unchecked::<8192, _>(f),
+                8193..=16384 => self.with_buf_unchecked::<16384, _>(f),
+                _ => self.with_buf_unchecked::<MAX_PATH_LEN, _>(f),
+            }
+        }
+    }
+
+    /// # Safety
+    /// 
+    /// Need to guarantee that `self.len() <= SIZE`.
+    #[inline(never)]
+    unsafe fn with_buf_unchecked<const SIZE: usize, R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
+        assert!(self.len() <= SIZE);
+        let mut buf = [0u8; SIZE];
+        f(self.as_os_str(&mut buf).unwrap())
     }
 }
 
@@ -103,6 +136,11 @@ impl Path {
     #[must_use]
     pub fn as_components(&self) -> Components<'_> {
         Components::new(&self.inner)
+    }
+
+    #[must_use]
+    pub fn as_concat_path<'cp>(&'cp self, item: &'cp OsStr) -> ConcatPath<'cp, 2> {
+        ConcatPath::new([self.as_os_str(), item])
     }
 }
 
@@ -195,18 +233,26 @@ mod tests {
     }
 
     #[test]
-    fn concat_as_str_test() {
+    fn concat_as_os_str_test() {
         let concat = ConcatPath::new(["/path", "/to", "/heart"]);
         let mut buf = [0u8; 128];
-        let as_str = concat.as_str(&mut buf).expect("Buf too small");
+        let as_str = concat.as_os_str(&mut buf).expect("Buf too small");
         assert_eq!(as_str, "/path/to/heart");
     }
 
     #[test]
-    fn as_boxed_str_test() {
+    fn concat_as_boxed_os_str_test() {
         let concat = ConcatPath::new(["/path", "/to", "/heart"]);
-        let as_str = concat.as_boxed_str();
+        let as_str = concat.as_boxed_os_str();
         assert_eq!(as_str.as_ref(), "/path/to/heart");
+    }
+
+    #[test]
+    fn concat_with_os_str() {
+        let concat = ConcatPath::new(["/path", "/to", "/heart"]);
+        concat.with_os_str(|s| {
+            assert_eq!(s, "/path/to/heart");
+        })
     }
 
     #[test]
@@ -233,5 +279,24 @@ mod tests {
         assert_eq!(components.next(), "Изучение Раст".into());
         assert_eq!(components.next(), "Урок №1.md".into());
         assert_eq!(components.next(), None);
+    }
+
+    #[test]
+    fn path_as_concat_path_test() {
+        static FILES: [&OsStr; 4] = [
+            "lesson-1.md",
+            "lesson-2.md",
+            "lesson-3.md",
+            "video-lesson.mp4",
+        ];
+        let path = Path::from_static("C:/Users/ferris/Rust/");
+
+        for file in FILES {
+            let concated = path.as_concat_path(file);
+            assert_eq!(
+                concated.as_boxed_os_str().as_ref(),
+                format!("{}{file}", path.as_os_str())
+            );
+        }
     }
 }

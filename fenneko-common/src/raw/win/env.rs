@@ -4,6 +4,7 @@ use winapi::api::process::GetCommandLine;
 
 pub mod consts {
     pub const OS: &str = "windows";
+    pub const MAX_PATH_LEN: usize = 32_767;
 }
 
 pub struct ArgsInner {

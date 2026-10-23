@@ -1,9 +1,9 @@
-use alloc::{borrow::Cow, string::String, sync::Arc};
-use core::{ffi::CStr, mem, ops::Deref, str::Utf8Error};
+use alloc::sync::Arc;
+use core::{ffi::CStr, mem, ops::Deref, slice};
 
-use crate::raw::os::OsStr;
+use crate::raw::os::{OsStr, OsString};
 
-const INLINE_CAP: usize = 23;
+const INLINE_CAP: usize = 11;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -19,18 +19,6 @@ pub enum InlineLen {
     _V9 = 9,
     _V10 = 10,
     _V11 = 11,
-    _V12 = 12,
-    _V13 = 13,
-    _V14 = 14,
-    _V15 = 15,
-    _V16 = 16,
-    _V17 = 17,
-    _V18 = 18,
-    _V19 = 19,
-    _V20 = 20,
-    _V21 = 21,
-    _V22 = 22,
-    _V23 = 23,
 }
 
 impl TryFrom<u8> for InlineLen {
@@ -54,7 +42,7 @@ pub enum Repr {
     Empty,
     Inline {
         len: InlineLen,
-        data: [u8; INLINE_CAP],
+        data: [u16; INLINE_CAP],
     },
     Heap(Arc<OsStr>),
     Static(&'static OsStr),
@@ -71,7 +59,7 @@ impl SmolOsStr {
     }
 
     #[must_use]
-    pub const fn from_static(s: &'static str) -> Self {
+    pub const fn from_static(s: &'static OsStr) -> Self {
         if s.is_empty() {
             Self::empty()
         } else {
@@ -80,14 +68,12 @@ impl SmolOsStr {
     }
 
     #[must_use]
-    pub fn as_os_str(&self) -> &str {
+    pub fn as_os_str(&self) -> &OsStr {
         match &self.0 {
-            Repr::Empty => "",
+            Repr::Empty => OsStr::empty(),
             Repr::Heap(a) => a,
             // SAFETY: `SmolStr` is created only from `str`, utf8 is always valid.
-            Repr::Inline { len, data } => unsafe {
-                str::from_utf8_unchecked(&data[..*len as usize])
-            },
+            Repr::Inline { len, data } => OsStr::from_slice(&data[..*len as usize]),
             Repr::Static(s) => s,
         }
     }
@@ -97,7 +83,12 @@ impl SmolOsStr {
         match &self.0 {
             Repr::Empty => &[],
             Repr::Heap(a) => a.as_bytes(),
-            Repr::Inline { len, data } => &data[..*len as usize],
+            Repr::Inline { len, data } => {
+                let utf16 = &data[..*len as usize];
+                let len = mem::size_of_val(&utf16);
+                let ptr = utf16.as_ptr();
+                unsafe { slice::from_raw_parts(ptr.cast(), len) }
+            },
             Repr::Static(s) => s.as_bytes(),
         }
     }
@@ -112,15 +103,15 @@ impl Deref for SmolOsStr {
 }
 
 #[inline]
-fn str_to_arr(s: &OsStr) -> [u8; INLINE_CAP] {
-    let mut out = [0u8; INLINE_CAP];
+fn str_to_arr(s: &OsStr) -> [u16; INLINE_CAP] {
+    let mut out = [0u16; INLINE_CAP];
     let mut len = s.len().min(INLINE_CAP);
 
     while len > 0 && !s.is_char_boundary(len) {
         len -= 1;
     }
 
-    out[..len].copy_from_slice(&s.as_bytes()[..len]);
+    out[..len].copy_from_slice(&s.as_slice()[..len]);
     out
 }
 
@@ -131,7 +122,7 @@ macro_rules! impl_from_string {
                 let repr = if value.len() == 0 {
                     Repr::Empty
                 } else if value.len() > INLINE_CAP {
-                    Repr::Heap(Arc::from(value))
+                    Repr::Heap(value.into())
                 } else {
                     Repr::Inline {
                         len: (value.len() as u8).try_into().unwrap(),
@@ -145,27 +136,27 @@ macro_rules! impl_from_string {
     )+};
 }
 
-impl_from_string!(String, &str, Cow<'static, str>);
+impl_from_string!(OsString, &OsStr);
 
-impl TryFrom<&CStr> for SmolOsStr {
-    type Error = Utf8Error;
-
-    fn try_from(value: &CStr) -> Result<Self, Self::Error> {
+impl From<&CStr> for SmolOsStr {
+    fn from(value: &CStr) -> Self {
         let len = value.count_bytes();
         let repr = if len == 0 {
             Repr::Empty
         } else if len > INLINE_CAP {
-            let s = value.to_str()?;
-            Repr::Heap(Arc::from(s))
+            let bytes = value.to_bytes();
+            let s = unsafe { OsStr::from_utf16_unchecked(bytes) };
+            Repr::Heap(s.into())
         } else {
-            let s = value.to_str()?;
+            let bytes = value.to_bytes();
+            let s = unsafe { OsStr::from_utf16_unchecked(bytes) };
             Repr::Inline {
                 len: (len as u8).try_into().unwrap(),
                 data: str_to_arr(s),
             }
         };
 
-        Ok(Self(repr))
+        Self(repr)
     }
 }
 

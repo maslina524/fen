@@ -1,4 +1,4 @@
-use core::{fmt::{self, Write}, mem, slice};
+use core::{fmt::{self, Write}, mem, ops::{Index, Range, RangeFrom, RangeFull, RangeTo}, slice};
 use alloc::{boxed::Box, sync::Arc};
 
 use crate::raw::os::{OsString, ToOsString};
@@ -157,4 +157,30 @@ impl From<&OsStr> for Arc<OsStr> {
         let arc: Arc<[u8]> = Arc::from(s.as_bytes());
         unsafe { Arc::from_raw(Arc::into_raw(arc) as *const OsStr) }
     }
+}
+
+impl Index<Range<usize>> for OsStr {
+    type Output = OsStr;
+    fn index(&self, range: Range<usize>) -> &OsStr {
+        OsStr::from_slice(&self.as_slice()[range])
+    }
+}
+
+impl Index<RangeFrom<usize>> for OsStr {
+    type Output = OsStr;
+    fn index(&self, range: RangeFrom<usize>) -> &OsStr {
+        OsStr::from_slice(&self.as_slice()[range])
+    }
+}
+
+impl Index<RangeTo<usize>> for OsStr {
+    type Output = OsStr;
+    fn index(&self, range: RangeTo<usize>) -> &OsStr {
+        OsStr::from_slice(&self.as_slice()[range])
+    }
+}
+
+impl Index<RangeFull> for OsStr {
+    type Output = OsStr;
+    fn index(&self, _: RangeFull) -> &OsStr { self }
 }

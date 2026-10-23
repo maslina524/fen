@@ -17,8 +17,10 @@ pub struct ConcatPath<'cp, const N: usize> {
 
 impl<'cp, const N: usize> ConcatPath<'cp, N> {
     #[must_use]
-    pub const fn new(inner: [&'cp OsStr; N]) -> Self {
-        Self { inner }
+    pub fn new<T: AsRef<OsStr> + ?Sized>(inner: [&'cp T; N]) -> Self {
+        Self {
+            inner: inner.map(|p| p.as_ref()),
+        }
     }
 
     #[must_use]
@@ -48,7 +50,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
         let mut osstring = OsString::with_capacity(len);
 
         for item in self.as_slice() {
-            osstring.push_str(item);
+            osstring.push_os_str(item);
         }
 
         osstring.into_boxed_str()
@@ -69,7 +71,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
         }
 
         // SAFETY: Store valid OsStr, safe
-        let osstr = unsafe { OsStr::from_utf8_unchecked(&buf[..len]) };
+        let osstr = unsafe { OsStr::from_utf16_unchecked(&buf[..len]) };
         Some(osstr)
     }
 
@@ -195,7 +197,7 @@ impl PathBuf {
 
     #[must_use]
     pub fn as_path(&self) -> Path {
-        Path::from(self.inner.as_str())
+        Path::from(self.inner.as_os_str())
     }
 
     #[must_use]
@@ -280,7 +282,7 @@ impl PathBuf {
                 if !self.has_trailing_sep() {
                     self.inner.push('/');
                 }
-                self.inner.push_str(i);
+                self.inner.push_os_str(i);
             }
         }
 
@@ -293,7 +295,7 @@ macro_rules! impl_from_for_pathbuf {
         $(
             impl From<$typ> for PathBuf {
                 fn from(value: $typ) -> Self {
-                    Self { inner: ::alloc::string::ToString::to_string(&value) }
+                    Self { inner: $crate::raw::os::ToOsString::to_os_string(&value) }
                 }
             }
         )+
@@ -319,7 +321,7 @@ impl<'c> Components<'c> {
     fn build_os_str(&self, start: usize) -> &'c OsStr {
         let slice = &self.inner[start..self.pos];
         // SAFETY: Bytes are created from OsStr, safe
-        unsafe { OsStr::from_utf8_unchecked(slice) }
+        unsafe { OsStr::from_utf16_unchecked(slice) }
     }
 }
 
@@ -400,7 +402,7 @@ mod tests {
 
     #[test]
     fn path_components_test() {
-        let path = Path::from_static("C:/Users/ferris/Rust/learn.md");
+        let path = Path::from("C:/Users/ferris/Rust/learn.md");
         let mut components = path.as_components();
 
         assert_eq!(components.next(), "C:".into());
@@ -413,7 +415,7 @@ mod tests {
 
     #[test]
     fn path_components_non_ascii_test() {
-        let path = Path::from_static("C:/Users/ferris/Изучение Раст/Урок №1.md");
+        let path = Path::from("C:/Users/ferris/Изучение Раст/Урок №1.md");
         let mut components = path.as_components();
 
         assert_eq!(components.next(), "C:".into());
@@ -426,16 +428,16 @@ mod tests {
 
     #[test]
     fn path_as_concat_path_test() {
-        static FILES: [&OsStr; 4] = [
-            "lesson-1.md",
-            "lesson-2.md",
-            "lesson-3.md",
-            "video-lesson.mp4",
+        static FILES: [OsString; 4] = [
+            OsString::from("lesson-1.md"),
+            OsString::from("lesson-2.md"),
+            OsString::from("lesson-3.md"),
+            OsString::from("video-lesson.mp4"),
         ];
-        let path = Path::from_static("C:/Users/ferris/Rust/");
+        let path = Path::from("C:/Users/ferris/Rust/");
 
         for file in FILES {
-            let concated = path.as_concat_path(file);
+            let concated = path.as_concat_path(&file);
             assert_eq!(
                 concated.as_boxed_os_str().as_ref(),
                 format!("{}{file}", path.as_os_str())

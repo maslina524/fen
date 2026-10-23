@@ -1,4 +1,4 @@
-use core::{fmt::{self, Write}, ops::Deref};
+use core::{fmt::{self, Write}, ops::{Deref, Index, Range, RangeFrom, RangeFull, RangeTo}};
 use alloc::{sync::Arc, vec::Vec};
 
 use crate::raw::os::OsStr;
@@ -105,6 +105,32 @@ impl From<OsString> for Arc<OsStr> {
         let arc: Arc<[u8]> = Arc::from(s.as_bytes());
         unsafe { Arc::from_raw(Arc::into_raw(arc) as *const OsStr) }
     }
+}
+
+impl Index<Range<usize>> for OsString {
+    type Output = OsStr;
+    fn index(&self, range: Range<usize>) -> &OsStr {
+        OsStr::from_slice(&self.as_slice()[range])
+    }
+}
+
+impl Index<RangeFrom<usize>> for OsString {
+    type Output = OsStr;
+    fn index(&self, range: RangeFrom<usize>) -> &OsStr {
+        OsStr::from_slice(&self.as_slice()[range])
+    }
+}
+
+impl Index<RangeTo<usize>> for OsString {
+    type Output = OsStr;
+    fn index(&self, range: RangeTo<usize>) -> &OsStr {
+        OsStr::from_slice(&self.as_slice()[range])
+    }
+}
+
+impl Index<RangeFull> for OsString {
+    type Output = OsStr;
+    fn index(&self, _: RangeFull) -> &OsStr { self.as_os_str() }
 }
 
 #[cfg(test)]

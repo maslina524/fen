@@ -204,6 +204,16 @@ impl PathBuf {
     }
 
     #[must_use]
+    pub fn into_os_string(self) -> OsString {
+        self.inner
+    }
+
+    #[must_use]
+    pub fn as_concat_path<'cp>(&'cp self, item: &'cp OsStr) -> ConcatPath<'cp, 2> {
+        ConcatPath::new([self.as_os_str(), item])
+    }
+
+    #[must_use]
     pub const fn len(&self) -> usize {
         self.inner.len()
     }
@@ -252,7 +262,12 @@ impl PathBuf {
     }
 
     #[must_use]
-    pub fn join(mut self, item: &Path) -> Self {
+    pub fn join<T: AsRef<Path>>(self, item: &T) -> Self {
+        self.join_inner(item.as_ref())
+    }
+
+    #[must_use]
+    fn join_inner(mut self, item: &Path) -> Self {
         let item_comp = item.as_components();
         self.inner.reserve(item_comp.len());
 
@@ -433,11 +448,29 @@ mod tests {
         let pathbuf = PathBuf::from("C:/Users/ferris");
         assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
 
-        let mut pathbuf = pathbuf.join(&Path::from("Rust"));
+        let mut pathbuf = pathbuf.join("Rust");
         assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris/Rust");
 
         let poped = pathbuf.pop();
         assert_eq!(poped, Some(Path::from("Rust")));
         assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
+    }
+
+    #[test]
+    fn pathbuf_super_join_test() {
+        let pathbuf = PathBuf::from("C:/Users/ferris");
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris");
+
+        let pathbuf = pathbuf.join("Rust");
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris/Rust");
+
+        let pathbuf = pathbuf.join("../C");
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/ferris/C");
+
+        let pathbuf = pathbuf.join("../../Edmund");
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/Edmund");
+
+        let pathbuf = pathbuf.join("./Mewgenics");
+        assert_eq!(pathbuf.as_os_str(), "C:/Users/Edmund/Mewgenics");
     }
 }

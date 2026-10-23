@@ -1,8 +1,10 @@
+use alloc::boxed::Box;
 use core::fmt;
 
-use alloc::boxed::Box;
-
-use crate::{os::SmolOsStr, raw::os::{OsStr, OsString}};
+use crate::{
+    os::SmolOsStr,
+    raw::os::{OsStr, OsString},
+};
 
 #[repr(transparent)]
 #[derive(Clone)]
@@ -72,13 +74,15 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
 #[repr(transparent)]
 #[derive(Clone)]
 pub struct Path {
-    inner: SmolOsStr
+    inner: SmolOsStr,
 }
 
 impl Path {
     #[must_use]
     pub const fn from_static(s: &'static OsStr) -> Self {
-        Self { inner: SmolOsStr::from_static(s) }
+        Self {
+            inner: SmolOsStr::from_static(s),
+        }
     }
 
     #[must_use]
@@ -94,6 +98,11 @@ impl Path {
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         self.inner.as_bytes()
+    }
+
+    #[must_use]
+    pub fn as_components(&self) -> Components<'_> {
+        Components::new(&self.inner)
     }
 }
 
@@ -116,15 +125,63 @@ macro_rules! impl_from_for_path {
                 fn from(value: $typ) -> Self {
                     Self { inner: SmolOsStr::from(value) }
                 }
-            } 
+            }
         )+
     };
 }
 
-impl_from_for_path!(
-    &OsStr,
-    OsString,
-);
+impl_from_for_path!(&OsStr, OsString);
+
+pub struct Components<'c> {
+    inner: &'c [u8],
+    pos: usize,
+}
+
+impl<'c> Components<'c> {
+    #[must_use]
+    pub const fn new(inner: &'c OsStr) -> Self {
+        Self {
+            inner: inner.as_bytes(),
+            pos: 0,
+        }
+    }
+
+    fn build_os_str(&self, start: usize) -> &'c OsStr {
+        let slice = &self.inner[start..self.pos];
+        // SAFETY: Bytes are created from OsStr, safe
+        unsafe { OsStr::from_utf8_unchecked(slice) }
+    }
+}
+
+impl<'c> Iterator for Components<'c> {
+    type Item = &'c OsStr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let start = self.pos;
+
+        loop {
+            let pos = self.pos;
+            if pos >= self.inner.len() {
+                return if pos == start {
+                    None
+                } else {
+                    let osstr = self.build_os_str(start);
+                    self.pos += 1;
+                    Some(osstr)
+                };
+            }
+
+            let ch = self.inner[self.pos];
+            if ch == b'\\' || ch == b'/' {
+                let osstr = self.build_os_str(start);
+                self.pos += 1;
+                return Some(osstr);
+            }
+
+            self.pos += 1;
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -150,5 +207,31 @@ mod tests {
         let concat = ConcatPath::new(["/path", "/to", "/heart"]);
         let as_str = concat.as_boxed_str();
         assert_eq!(as_str.as_ref(), "/path/to/heart");
+    }
+
+    #[test]
+    fn path_components_test() {
+        let path = Path::from_static("C:/Users/ferris/Rust/learn.md");
+        let mut components = path.as_components();
+
+        assert_eq!(components.next(), "C:".into());
+        assert_eq!(components.next(), "Users".into());
+        assert_eq!(components.next(), "ferris".into());
+        assert_eq!(components.next(), "Rust".into());
+        assert_eq!(components.next(), "learn.md".into());
+        assert_eq!(components.next(), None);
+    }
+
+    #[test]
+    fn path_components_non_ascii_test() {
+        let path = Path::from_static("C:/Users/ferris/Изучение Раст/Урок №1.md");
+        let mut components = path.as_components();
+
+        assert_eq!(components.next(), "C:".into());
+        assert_eq!(components.next(), "Users".into());
+        assert_eq!(components.next(), "ferris".into());
+        assert_eq!(components.next(), "Изучение Раст".into());
+        assert_eq!(components.next(), "Урок №1.md".into());
+        assert_eq!(components.next(), None);
     }
 }

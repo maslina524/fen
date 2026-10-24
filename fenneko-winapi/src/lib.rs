@@ -9,6 +9,7 @@ pub mod api;
 pub mod handle;
 pub mod macros;
 pub mod raw;
+pub mod unicode;
 
 use raw::HANDLE;
 

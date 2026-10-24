@@ -116,6 +116,8 @@ impl Renderable for HelpOut {
             render_action(f, a)?;
         }
 
+        f.write_char('\n')?;
+
         Ok(())
     }
 }

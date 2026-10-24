@@ -4,6 +4,7 @@
 #[cfg(not(test))]
 mod panic_impl {
     use core::panic::PanicInfo;
+
     use common::prelude::*;
 
     #[panic_handler]

@@ -73,14 +73,11 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 
     fn byte_len(&self) -> usize {
-        self.as_slice()
-            .iter()
-            .map(|s| s.as_bytes().len())
-            .sum()
+        self.as_slice().iter().map(|s| s.as_bytes().len()).sum()
     }
 
     pub fn with_os_str<R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
-        // SAFETY: buffer size is chosen using the same length metric
+        // SAFETY: Buffer size is chosen using the same length metric
         // that `as_os_str` uses
         unsafe {
             match self.byte_len() {
@@ -101,16 +98,13 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 
     #[inline(never)]
-    unsafe fn with_buf_unchecked<const SIZE: usize, R>(
-        &self,
-        f: impl FnOnce(&OsStr) -> R,
-    ) -> R {
+    unsafe fn with_buf_unchecked<const SIZE: usize, R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
         assert!(self.byte_len() <= SIZE);
 
         let mut buf = [0u8; SIZE];
         let os_str = self
             .as_os_str(&mut buf)
-            .expect("buffer sized using ConcatPath::byte_len");
+            .expect("Buffer sized using ConcatPath::byte_len");
 
         f(os_str)
     }
@@ -177,7 +171,9 @@ impl fmt::Debug for Path {
 
 impl From<&str> for Path {
     fn from(value: &str) -> Self {
-        Self { inner: SmolOsStr::from(value) }
+        Self {
+            inner: SmolOsStr::from(value),
+        }
     }
 }
 
@@ -333,7 +329,10 @@ pub struct Components<'c> {
 impl<'c> Components<'c> {
     #[must_use]
     pub const fn new(inner: &'c OsStr) -> Self {
-        Self { inner: inner.as_slice(), pos: 0 }
+        Self {
+            inner: inner.as_slice(),
+            pos: 0,
+        }
     }
 }
 
@@ -371,7 +370,11 @@ mod tests {
         let p = OsString::from("/path");
         let t = OsString::from("/to");
         let h = OsString::from("/heart");
-        f(ConcatPath::new([p.as_os_str(), t.as_os_str(), h.as_os_str()]))
+        f(ConcatPath::new([
+            p.as_os_str(),
+            t.as_os_str(),
+            h.as_os_str(),
+        ]))
     }
 
     #[test]
@@ -448,31 +451,55 @@ mod tests {
     #[test]
     fn pathbuf_pop_join_test() {
         let pathbuf = PathBuf::from(OsString::from("C:/Users/ferris"));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/ferris").as_os_str()
+        );
 
         let mut pathbuf = pathbuf.join(&Path::from("Rust"));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris/Rust").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/ferris/Rust").as_os_str()
+        );
 
         let poped = pathbuf.pop();
         assert_eq!(poped, Some(Path::from("Rust")));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/ferris").as_os_str()
+        );
     }
 
     #[test]
     fn pathbuf_super_join_test() {
         let pathbuf = PathBuf::from(OsString::from("C:/Users/ferris"));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/ferris").as_os_str()
+        );
 
         let pathbuf = pathbuf.join(&Path::from("Rust"));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris/Rust").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/ferris/Rust").as_os_str()
+        );
 
         let pathbuf = pathbuf.join(&Path::from("../C"));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/ferris/C").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/ferris/C").as_os_str()
+        );
 
         let pathbuf = pathbuf.join(&Path::from("../../Edmund"));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/Edmund").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/Edmund").as_os_str()
+        );
 
         let pathbuf = pathbuf.join(&Path::from("./Mewgenics"));
-        assert_eq!(pathbuf.as_os_str(), Path::from("C:/Users/Edmund/Mewgenics").as_os_str());
+        assert_eq!(
+            pathbuf.as_os_str(),
+            Path::from("C:/Users/Edmund/Mewgenics").as_os_str()
+        );
     }
 }

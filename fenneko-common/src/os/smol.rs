@@ -126,7 +126,7 @@ impl From<&OsStr> for SmolOsStr {
         } else {
             Repr::Inline {
                 len: (value.len() as u8).try_into().unwrap(),
-                data: str_to_arr(value)
+                data: str_to_arr(value),
             }
         };
         Self(repr)
@@ -143,7 +143,7 @@ impl From<OsString> for SmolOsStr {
         } else {
             Repr::Inline {
                 len: (value.len() as u8).try_into().unwrap(),
-                data: str_to_arr(value.as_os_str())
+                data: str_to_arr(value.as_os_str()),
             }
         };
         Self(repr)

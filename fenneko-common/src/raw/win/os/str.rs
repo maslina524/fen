@@ -1,6 +1,9 @@
 use alloc::{boxed::Box, sync::Arc};
 use core::{
-    fmt::{self, Write}, mem, ops::{Index, Range, RangeFrom, RangeFull, RangeTo}, ptr, slice,
+    fmt::{self, Write},
+    mem,
+    ops::{Index, Range, RangeFrom, RangeFull, RangeTo},
+    ptr, slice,
 };
 
 use crate::raw::os::{OsString, ToOsString};
@@ -24,7 +27,7 @@ impl OsStr {
     }
 
     /// # Safety
-    /// 
+    ///
     /// You need to guarantee that the slice is valid UTF-16
     #[must_use]
     pub const unsafe fn from_utf16_unchecked(s: &[u8]) -> &Self {
@@ -130,7 +133,8 @@ impl Iterator for Chars<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         // SAFETY: OsStr stores valid UTF-16, so next_point yields valid chars
-        self.next_point().map(|ch| unsafe { char::from_u32_unchecked(ch) })
+        self.next_point()
+            .map(|ch| unsafe { char::from_u32_unchecked(ch) })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

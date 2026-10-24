@@ -1,4 +1,4 @@
-use alloc::{sync::Arc, vec::Vec, boxed::Box};
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::{
     fmt::{self, Write},
     ops::{Index, Range, RangeFrom, RangeFull, RangeTo},
@@ -218,7 +218,10 @@ mod tests {
     #[test]
     fn osstring_deref_smoke_test() {
         let s = OsString::from("abc");
-        assert_eq!(s.as_os_str(), OsStr::from_slice(&[b'a' as u16, b'b' as u16, b'c' as u16]));
+        assert_eq!(
+            s.as_os_str(),
+            OsStr::from_slice(&[b'a' as u16, b'b' as u16, b'c' as u16])
+        );
         assert_eq!(s.as_slice().len(), 3);
     }
 }

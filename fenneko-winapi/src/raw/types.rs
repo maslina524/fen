@@ -1,4 +1,4 @@
-use core::{ffi::c_void, mem};
+use core::{ffi::c_void, mem, ptr};
 
 pub type HANDLE = *mut c_void;
 pub type NTSTATUS = i32;
@@ -132,6 +132,7 @@ impl Default for IO_STATUS_BLOCK {
 }
 
 #[repr(C)]
+#[derive(Default)]
 pub struct FILE_BASIC_INFORMATION {
     pub CreationTime: LARGE_INTEGER,
     pub LastAccessTime: LARGE_INTEGER,
@@ -148,4 +149,17 @@ pub struct OBJECT_ATTRIBUTES {
     pub Attributes: ULONG,
     pub SecurityDescriptor: PVOID,
     pub SecurityQualityOfService: PVOID,
+}
+
+impl Default for OBJECT_ATTRIBUTES {
+    fn default() -> Self {
+        OBJECT_ATTRIBUTES {
+            Length: mem::size_of::<OBJECT_ATTRIBUTES>() as ULONG,
+            RootDirectory: ptr::null_mut(),
+            ObjectName: ptr::null_mut(),
+            Attributes: 0x0000_0040,
+            SecurityDescriptor: ptr::null_mut(),
+            SecurityQualityOfService: ptr::null_mut(),
+        }
+    }
 }

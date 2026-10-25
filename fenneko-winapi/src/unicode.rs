@@ -33,6 +33,16 @@ impl UnicodeString {
         unsafe { slice::from_raw_parts(inner.Buffer, self.len()) }
     }
 
+    #[must_use]
+    pub const fn as_inner_ptr(&self) -> *const UNICODE_STRING {
+        &raw const self.0
+    }
+
+    #[must_use]
+    pub const fn as_inner_mut_ptr(&mut self) -> *mut UNICODE_STRING {
+        &raw mut self.0
+    }
+
     fn dos_path_to_nt_path(s: &[u16], unicode_raw: &mut UNICODE_STRING) -> bool {
         let ret = unsafe {
             ntdll::RtlDosPathNameToNtPathName_U(

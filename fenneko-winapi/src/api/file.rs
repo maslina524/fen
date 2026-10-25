@@ -2,7 +2,7 @@ use core::{marker::PhantomData, ptr};
 
 use crate::{
     Handle, NT_SUCCESS,
-    raw::{HANDLE, IO_STATUS_BLOCK, NTSTATUS, NtWriteFile},
+    raw::{HANDLE, IO_STATUS_BLOCK, NTSTATUS, ntdll},
 };
 
 pub trait CanRead {}
@@ -46,7 +46,7 @@ pub fn WriteFile<T: CanWrite>(handle: &FileHandle<T>, buf: &[u8]) -> Result<usiz
     let mut info = IO_STATUS_BLOCK::default();
     // SAFETY: The descriptor, buffer, and its length are always valid
     let status = unsafe {
-        NtWriteFile(
+        ntdll::NtWriteFile(
             handle.as_raw(),
             ptr::null_mut(),
             ptr::null_mut(),

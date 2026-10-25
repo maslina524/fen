@@ -19,7 +19,8 @@ pub type ULONG_PTR = usize;
 pub type LARGE_INTEGER = i64;
 
 // Strings
-pub type PWSTR = *const u16;
+pub type PWSTR = *mut u16;
+pub type PCWSTR = *const u16;
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
@@ -56,6 +57,7 @@ impl Into<bool> for BOOL {
 }
 
 #[repr(C)]
+#[derive(Default)]
 pub struct UNICODE_STRING {
     pub Length: USHORT,
     pub MaximumLength: USHORT,

@@ -1,7 +1,7 @@
 use crate::{
     Handle,
     api::file::{FileHandle, Write},
-    raw::{self, RtlGetCurrentPeb},
+    raw::{kernel32, ntdll},
 };
 
 #[derive(Clone, Copy)]
@@ -25,7 +25,7 @@ pub enum CodePage {
 #[must_use]
 pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
     // SAFETY: We always get a valid pointer to the PEB
-    let ptr = unsafe { RtlGetCurrentPeb() };
+    let ptr = unsafe { ntdll::RtlGetCurrentPeb() };
     assert!(!ptr.is_null(), "Failed to get PEB");
     // SAFETY: The PEB is guaranteed to be located at the `ptr`
     let peb = unsafe { &*ptr };
@@ -58,7 +58,7 @@ pub fn SetConsoleOutputCP(code_page: CodePage) {
     // SAFETY: wCodePage is valid, the return value is not checked, I
     // will check it when I create my own implementation, for now it
     // stays like this
-    unsafe { raw::SetConsoleOutputCP(code_page as u32) };
+    unsafe { kernel32::SetConsoleOutputCP(code_page as u32) };
 }
 
 #[cfg(test)]

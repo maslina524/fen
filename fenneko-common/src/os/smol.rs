@@ -72,7 +72,8 @@ impl SmolOsStr {
         match &self.0 {
             Repr::Empty => OsStr::empty(),
             Repr::Heap(a) => a,
-            // SAFETY: `SmolStr` is created only from `str`, utf8 is always valid.
+            // SAFETY: `SmolStr` is created only from `str`, utf8 is always
+            // valid.
             Repr::Inline { len, data } => OsStr::from_slice(&data[..*len as usize]),
             Repr::Static(s) => s,
         }

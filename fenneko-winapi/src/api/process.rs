@@ -1,15 +1,12 @@
 use alloc::string::String;
 use core::{hint::spin_loop, slice};
 
-use crate::{
-    handle,
-    raw::{self, RtlGetCurrentPeb},
-};
+use crate::{handle, raw::ntdll};
 
 pub fn ExitProcess(code: i32) -> ! {
     // SAFETY: Passing itself (-1) as the descriptor,
     // called in the binary, safe
-    let _ = unsafe { raw::NtTerminateProcess(handle!(-1), code) };
+    let _ = unsafe { ntdll::NtTerminateProcess(handle!(-1), code) };
 
     loop {
         spin_loop();
@@ -24,7 +21,7 @@ pub fn ExitProcess(code: i32) -> ! {
 #[must_use]
 pub fn GetCommandLine() -> String {
     // SAFETY: We always get a valid pointer to the PEB
-    let peb_ptr = unsafe { RtlGetCurrentPeb() };
+    let peb_ptr = unsafe { ntdll::RtlGetCurrentPeb() };
     assert!(!peb_ptr.is_null(), "Failed to get PEB");
     // SAFETY: The PEB is guaranteed to be located at the `ptr`
     let peb = unsafe { &*peb_ptr };

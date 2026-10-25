@@ -7,11 +7,22 @@
 )]
 #![allow(clippy::unreadable_literal)]
 
-pub mod link;
-pub use link::*;
+pub mod kernel32;
+pub mod ntdll;
 
 pub mod types;
 pub use types::*;
 
 pub mod peb;
 pub use peb::PEB;
+
+#[macro_export]
+macro_rules! link {
+    ($library:literal $($link_name:literal)? $(#[$doc:meta])? fn $($function:tt)*) => (
+        #[link(name = $library)]
+        unsafe extern "system" {
+            $(#[link_name=$link_name])?
+            pub fn $($function)*;
+        }
+    )
+}

@@ -2,7 +2,7 @@ use core::{marker::PhantomData, ptr::NonNull};
 
 use crate::{
     Handle,
-    raw::{self, HANDLE, RtlGetCurrentPeb},
+    raw::{HANDLE, ntdll},
 };
 
 pub struct Alloc;
@@ -191,7 +191,7 @@ impl Handle for HeapHandle {
 #[must_use]
 pub fn GetProcessHeap() -> HeapHandle {
     // SAFETY: We always get a valid pointer to the PEB
-    let ptr = unsafe { RtlGetCurrentPeb() };
+    let ptr = unsafe { ntdll::RtlGetCurrentPeb() };
     assert!(!ptr.is_null(), "Failed to get PEB");
     // SAFETY: The PEB is guaranteed to be located at the `ptr`
     let peb = unsafe { &*ptr };
@@ -210,7 +210,7 @@ pub fn HeapAlloc<T: Sized>(
 
     // SAFETY: `HeapHandle` guarantees a valid handle,
     // `HeapFlags<Alloc>` restricts to valid flags, safe
-    let raw = unsafe { raw::RtlAllocateHeap(handle.as_raw(), flags.build(), bytes) };
+    let raw = unsafe { ntdll::RtlAllocateHeap(handle.as_raw(), flags.build(), bytes) };
     if raw.is_null() {
         return None;
     }
@@ -230,7 +230,7 @@ pub fn HeapFree<T: Sized>(
 ) -> Result<(), HeapPtr<T>> {
     // SAFETY: `HeapHandle` guarantees a valid handle,
     // `HeapFlags<Free>` restricts to valid flags, safe
-    let ret = unsafe { raw::RtlFreeHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast()) };
+    let ret = unsafe { ntdll::RtlFreeHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast()) };
     if ret.into_bool() { Ok(()) } else { Err(ptr) }
 }
 
@@ -251,7 +251,7 @@ pub fn HeapReAlloc<T: Sized>(
     // SAFETY: `HeapHandle` guarantees a valid handle,
     // `HeapFlags<ReAlloc>` restricts to valid flags, safe
     let raw = unsafe {
-        raw::RtlReAllocateHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast(), bytes)
+        ntdll::RtlReAllocateHeap(handle.as_raw(), flags.build(), ptr.as_ptr().cast(), bytes)
     };
     if raw.is_null() {
         return Err(ptr);

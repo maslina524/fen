@@ -1,13 +1,10 @@
 use core::ptr;
 
 use crate::{
-    ntstatus::Ntstatus,
-    raw::{
+    ntstatus::Ntstatus, raw::{
         IO_STATUS_BLOCK, OBJECT_ATTRIBUTES,
         ntdll::{self, NtClose},
-    },
-    unicode::UnicodeString,
-    win32::fileapi::FileDispose,
+    }, unicode::UnicodeString, win32::fileapi::{FileDispose, FileFlags},
 };
 
 const FILE_LIST_DIRECTORY: u32 = 1;
@@ -32,7 +29,7 @@ pub enum CreateDirError {
 ///
 /// On error returns `CreateDirError`, which is either a Unicode string
 /// allocation error or a `NtCreateFile` call error (Ntstatus).
-pub fn CreateDirectory(path: &[u16]) -> Result<(), CreateDirError> {
+pub fn CreateDirectory(path: &[u16], flags: FileFlags) -> Result<(), CreateDirError> {
     let unicode = UnicodeString::from_path(path).ok_or(CreateDirError::UnicodePathAllocate)?;
 
     let mut attrs = OBJECT_ATTRIBUTES {
@@ -50,7 +47,7 @@ pub fn CreateDirectory(path: &[u16]) -> Result<(), CreateDirError> {
             &raw mut attrs,
             &raw mut io,
             ptr::null(),
-            FILE_ATTRIBUTE_DIRECTORY,
+            FILE_ATTRIBUTE_DIRECTORY | flags.build(),
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             FileDispose::CreateNew as u32,
             FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,

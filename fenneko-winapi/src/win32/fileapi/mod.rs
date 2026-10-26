@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::{Handle, raw::HANDLE};
+use crate::{Handle, raw::HANDLE, win32::handleapi::CloseHandle};
 
 import!(WriteFile, GetFileAttributes);
 
@@ -18,7 +18,6 @@ pub mod FileTag {
     impl CanWrite for All {}
 }
 
-#[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct FileHandle<Tag> {
     raw: HANDLE,
@@ -35,6 +34,12 @@ impl<Tag> Handle for FileHandle<Tag> {
 
     fn as_raw(&self) -> HANDLE {
         self.raw
+    }
+}
+
+impl<Tag> Drop for FileHandle<Tag> {
+    fn drop(&mut self) {
+        CloseHandle(self);
     }
 }
 

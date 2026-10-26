@@ -4,7 +4,7 @@ use crate::{Handle, raw::HANDLE};
 
 import!(GetProcessHeap, HeapAlloc, HeapFree, HeapReAlloc);
 
-pub(crate) mod HeapTag {
+pub mod HeapTag {
     pub struct Alloc;
     pub struct Free;
     pub struct ReAlloc;

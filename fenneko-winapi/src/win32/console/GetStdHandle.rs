@@ -1,4 +1,6 @@
-use crate::{Handle as _, raw::ntdll, win32::fileapi::{FileHandle, FileTag::Write}};
+use core::mem::ManuallyDrop;
+
+use crate::{Handle as _, raw::ntdll, win32::{console::ConsoleHandle, fileapi::FileHandle}};
 
 #[derive(Clone, Copy)]
 pub enum StdHandle {
@@ -13,7 +15,7 @@ pub enum StdHandle {
 /// happen and nothing would work without the PEB, so it panics
 /// instead of returning ``Result``/``Option``.
 #[must_use]
-pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
+pub fn GetStdHandle(typ: StdHandle) -> Option<ConsoleHandle> {
     // SAFETY: We always get a valid pointer to the PEB
     let ptr = unsafe { ntdll::RtlGetCurrentPeb() };
     assert!(!ptr.is_null(), "Failed to get PEB");
@@ -41,5 +43,5 @@ pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
         return None;
     }
 
-    Some(FileHandle::from_raw(val))
+    Some(ManuallyDrop::new(FileHandle::from_raw(val)))
 }

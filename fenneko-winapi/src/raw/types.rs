@@ -2,13 +2,14 @@ use core::{ffi::c_void, mem, ptr};
 
 pub type HANDLE = *mut c_void;
 pub type NTSTATUS = i32;
-pub type PIO_APC_ROUTINE = *mut c_void;
+pub type ACCESS_MASK = ULONG;
 
 // Pointers
 pub type PULONG = *const u32;
 pub type PLARGE_INTEGER = *const i64;
 pub type PVOID = *mut c_void;
 pub type LPVOID = *mut c_void;
+pub type PIO_APC_ROUTINE = *mut c_void;
 
 // Primitives
 pub type BYTE = u8;

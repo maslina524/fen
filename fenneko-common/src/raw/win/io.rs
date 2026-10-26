@@ -1,13 +1,13 @@
 use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
 use winapi::win32::{
-    console::{CodePage, GetStdHandle, SetConsoleOutputCP, StdHandle},
-    fileapi::{FileHandle, FileTag::Write, WriteFile},
+    console::{CodePage, ConsoleHandle, GetStdHandle, SetConsoleOutputCP, StdHandle},
+    fileapi::WriteFile,
 };
 
 pub static IS_UTF8: AtomicBool = AtomicBool::new(false);
 
-pub type RawHandle = FileHandle<Write>;
+pub type RawHandle = ConsoleHandle;
 
 /// # Panics
 ///

@@ -8,6 +8,6 @@ mod tests {
     #[test]
     fn command_line_test() {
         let string = GetCommandLine();
-        assert!(string.contains("cargo"));
+        assert!(string.contains("winapi"), "Command Line: `{string}`");
     }
 }

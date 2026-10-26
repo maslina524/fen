@@ -88,6 +88,7 @@ impl Facility {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(transparent)]
 pub struct Ntstatus(u32);
 
 impl Ntstatus {
@@ -158,6 +159,12 @@ impl fmt::Debug for Ntstatus {
             .field("customer", &self.customer())
             .field("severity", &self.severity())
             .finish()
+    }
+}
+
+impl From<NTSTATUS> for Ntstatus {
+    fn from(value: NTSTATUS) -> Self {
+        Self::new(value)
     }
 }
 

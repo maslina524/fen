@@ -2,7 +2,8 @@ use core::ptr;
 
 use crate::{
     Handle,
-    raw::{HANDLE, IO_STATUS_BLOCK, NTSTATUS, OBJECT_ATTRIBUTES, ntdll},
+    ntstatus::Ntstatus,
+    raw::{HANDLE, IO_STATUS_BLOCK, OBJECT_ATTRIBUTES, ntdll},
     unicode::UnicodeString,
     win32::fileapi::{FileAccess, FileHandle},
 };
@@ -40,7 +41,7 @@ pub enum FileDispose {
 #[derive(Debug, Clone, Copy)]
 pub enum CreateFileError {
     UnicodePathAllocate,
-    CreateFile(NTSTATUS),
+    CreateFile(Ntstatus),
 }
 
 #[repr(transparent)]
@@ -108,6 +109,10 @@ impl FileFlags {
     }
 }
 
+/// # Errors
+///
+/// On error returns `CreateFileError`, which is either a Unicode string
+/// allocation error or a `NtCreateFile` call error (Ntstatus).
 #[allow(unused_variables)]
 pub fn CreateFile<A: FileAccess>(
     path: &[u16],
@@ -116,7 +121,7 @@ pub fn CreateFile<A: FileAccess>(
     flags: FileFlags,
 ) -> Result<FileHandle<A>, CreateFileError> {
     let access_val = A::raw();
-    create_file_inner(path, access_val, share, create, flags).map(|h| FileHandle::from_raw(h))
+    create_file_inner(path, access_val, share, create, flags).map(FileHandle::from_raw)
 }
 
 fn create_file_inner(
@@ -135,6 +140,7 @@ fn create_file_inner(
     let mut io = IO_STATUS_BLOCK::default();
     let mut out = ptr::null_mut();
 
+    // SAFETY: All wrapper structures comply with the `ntdll` documentation
     let ret = unsafe {
         ntdll::NtCreateFile(
             &raw mut out,
@@ -151,7 +157,7 @@ fn create_file_inner(
         )
     };
 
-    if NT_SUCCESS!(ret) {
+    if ret.is_success() {
         Ok(out)
     } else {
         Err(CreateFileError::CreateFile(ret))

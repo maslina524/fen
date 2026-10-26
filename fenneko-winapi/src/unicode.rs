@@ -6,6 +6,7 @@ use crate::raw::{UNICODE_STRING, ntdll};
 pub struct UnicodeString(UNICODE_STRING);
 
 impl UnicodeString {
+    // FIXME: Replace `&[u16]` with `OsStr` in the future
     #[must_use]
     pub fn from_path(s: &[u16]) -> Option<Self> {
         let mut buf: Vec<u16> = Vec::with_capacity(s.len() + 1);
@@ -46,6 +47,8 @@ impl UnicodeString {
     }
 
     fn dos_path_to_nt_path(s: &[u16], unicode_raw: &mut UNICODE_STRING) -> bool {
+        // SAFETY: `&[u16]` slice may be incorrect, mostly this shouldn't happen
+        // since in common we convert valid Paths to `&[u16]`
         let ret = unsafe {
             ntdll::RtlDosPathNameToNtPathName_U(
                 s.as_ptr(),
@@ -61,6 +64,8 @@ impl UnicodeString {
 impl Drop for UnicodeString {
     fn drop(&mut self) {
         let inner = &mut self.0;
+        // SAFETY: `UNICODE_STRING` is valid, drop is called only once, the
+        // function returns `()`
         unsafe { ntdll::RtlFreeUnicodeString(inner) };
     }
 }

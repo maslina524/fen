@@ -1,5 +1,6 @@
 use crate::{
-    raw::{FILE_BASIC_INFORMATION, NTSTATUS, OBJECT_ATTRIBUTES, ntdll},
+    ntstatus::Ntstatus,
+    raw::{FILE_BASIC_INFORMATION, OBJECT_ATTRIBUTES, ntdll},
     unicode::UnicodeString,
 };
 
@@ -27,9 +28,13 @@ impl ItemAttributes {
 #[derive(Debug, Clone, Copy)]
 pub enum FileAttributesError {
     UnicodePathAllocate,
-    QueryAttributes(NTSTATUS),
+    QueryAttributes(Ntstatus),
 }
 
+/// # Errors
+///
+/// On error returns `FileAttributesError`, which is either a Unicode string
+/// allocation error or a `NtQueryAttributesFile` call error (Ntstatus).
 pub fn GetFileAttributes(path: &[u16]) -> Result<ItemAttributes, FileAttributesError> {
     let path = UnicodeString::from_path(path).ok_or(FileAttributesError::UnicodePathAllocate)?;
     let mut attr = OBJECT_ATTRIBUTES {
@@ -38,8 +43,10 @@ pub fn GetFileAttributes(path: &[u16]) -> Result<ItemAttributes, FileAttributesE
     };
     let mut info = FILE_BASIC_INFORMATION::default();
 
+    // SAFETY: We pass valid pointers, `OBJECT_ATTRIBUTES` stores a valid
+    // pointer to `UNICODE_STRING`
     let ret = unsafe { ntdll::NtQueryAttributesFile(&raw mut attr, &raw mut info) };
-    if !NT_SUCCESS!(ret) {
+    if !ret.is_success() {
         return Err(FileAttributesError::QueryAttributes(ret));
     }
 

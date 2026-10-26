@@ -30,6 +30,8 @@ impl UnicodeString {
     #[must_use]
     pub const fn as_slice(&self) -> &[u16] {
         let inner = &self.0;
+        // SAFETY: Method `len` returns the number of characters, not
+        // bytes, safe
         unsafe { slice::from_raw_parts(inner.Buffer, self.len()) }
     }
 

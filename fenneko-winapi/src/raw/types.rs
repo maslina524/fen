@@ -154,8 +154,8 @@ pub struct OBJECT_ATTRIBUTES {
 
 impl Default for OBJECT_ATTRIBUTES {
     fn default() -> Self {
-        OBJECT_ATTRIBUTES {
-            Length: mem::size_of::<OBJECT_ATTRIBUTES>() as ULONG,
+        Self {
+            Length: mem::size_of::<Self>() as ULONG,
             RootDirectory: ptr::null_mut(),
             ObjectName: ptr::null_mut(),
             Attributes: 0x0000_0040,

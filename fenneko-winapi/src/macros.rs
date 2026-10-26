@@ -25,19 +25,18 @@ macro_rules! impl_tag {
     };
 }
 
+macro_rules! impl_sealed {
+    ($($name:ident),+ $(,)?) => {
+        $(
+            impl sealed::Sealed for $name {}
+        )+
+    };
+}
+
 macro_rules! mod_sealed {
     () => {
         mod sealed {
             pub trait Sealed {}
         }
-    };
-}
-
-macro_rules! impl_sealed {
-    ($trait:ident : $($name:ident),+ $(,)?) => {
-        $(  
-            impl sealed::Sealed for $name {}
-            impl $trait for $name {}
-        )+
     };
 }

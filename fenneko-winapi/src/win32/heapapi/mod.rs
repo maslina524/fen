@@ -11,7 +11,8 @@ pub struct Alloc;
 pub struct Free;
 pub struct ReAlloc;
 
-impl_sealed!(FlagTag: Alloc, Free, ReAlloc);
+impl_sealed!(Alloc, Free, ReAlloc);
+impl_tag!(FlagTag: Alloc, Free, ReAlloc);
 
 #[derive(Clone, Copy)]
 pub struct HeapFlags<T: FlagTag> {

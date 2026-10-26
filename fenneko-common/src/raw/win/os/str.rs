@@ -132,7 +132,8 @@ impl Iterator for Chars<'_> {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // SAFETY: OsStr stores valid UTF-16, so next_point yields valid chars
+        // SAFETY: OsStr stores valid UTF-16, so next_point yields valid
+        // chars
         self.next_point()
             .map(|ch| unsafe { char::from_u32_unchecked(ch) })
     }

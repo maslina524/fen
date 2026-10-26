@@ -2,10 +2,12 @@ use core::marker::PhantomData;
 
 use crate::{Handle, raw::HANDLE, win32::handleapi::CloseHandle};
 
-import!(WriteFile, GetFileAttributes);
+import!(CreateFile, GetFileAttributes, WriteFile);
 
 mod_sealed!();
-pub trait FileAccess: sealed::Sealed {}
+pub trait FileAccess: sealed::Sealed {
+    fn raw() -> u32;
+}
 
 pub trait CanRead: FileAccess {}
 pub trait CanWrite: FileAccess {}
@@ -17,8 +19,25 @@ pub struct All;
 impl_tag!(CanRead: Read, All);
 impl_tag!(CanWrite: Write, All);
 
-impl_sealed!(FileAccess: Read, Write, All);
+impl_sealed!(Read, Write, All);
 
+impl FileAccess for Read {
+    fn raw() -> u32 {
+        0x8000_0000
+    }
+}
+
+impl FileAccess for Write {
+    fn raw() -> u32 {
+        0x4000_0000
+    }
+}
+
+impl FileAccess for All {
+    fn raw() -> u32 {
+        0x8000_0000 | 0x4000_0000
+    }
+}
 
 #[repr(transparent)]
 pub struct FileHandle<Access> {
@@ -78,5 +97,17 @@ mod tests {
                 typ: ItemType::File
             }
         );
+    }
+
+    #[test]
+    fn create_file_test() {
+        let path: Vec<u16> = "Cargo.toml".encode_utf16().collect();
+        CreateFile::<Write>(
+            &path,
+            FileShare::ReadWrite,
+            FileDispose::OpenAlways,
+            FileFlags::new().normal(),
+        )
+        .expect("Failed to open file");
     }
 }

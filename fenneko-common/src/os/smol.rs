@@ -26,8 +26,8 @@ impl TryFrom<u8> for InlineLen {
 
     fn try_from(value: u8) -> Result<Self, ()> {
         if (1u8..=INLINE_CAP as u8).contains(&value) {
-            // SAFETY: Enum bounds are checked, it has the same layout as u8,
-            // safe
+            // SAFETY: Enum bounds are checked, it has the same
+            // layout as u8, safe
             let len = unsafe { mem::transmute::<u8, Self>(value) };
             Ok(len)
         } else {
@@ -72,8 +72,8 @@ impl SmolOsStr {
         match &self.0 {
             Repr::Empty => OsStr::empty(),
             Repr::Heap(a) => a,
-            // SAFETY: `SmolStr` is created only from `str`, utf8 is always
-            // valid.
+            // SAFETY: `SmolStr` is created only from `str`, utf8 is
+            // always valid.
             Repr::Inline { len, data } => OsStr::from_slice(&data[..*len as usize]),
             Repr::Static(s) => s,
         }
@@ -88,7 +88,8 @@ impl SmolOsStr {
                 let utf16 = &data[..*len as usize];
                 let len = mem::size_of_val(utf16);
                 let ptr = utf16.as_ptr();
-                // SAFETY: `SmolOsStr` is created from a valid `OsStr`, safe
+                // SAFETY: `SmolOsStr` is created from a valid
+                // `OsStr`, safe
                 unsafe { slice::from_raw_parts(ptr.cast(), len) }
             },
             Repr::Static(s) => s.as_bytes(),

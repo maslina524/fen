@@ -8,6 +8,7 @@ pub mod raw;
 
 // Public api
 pub mod env;
+pub mod fs;
 pub mod io;
 pub mod macros;
 pub mod os;

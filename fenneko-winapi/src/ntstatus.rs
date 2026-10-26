@@ -103,8 +103,8 @@ impl Ntstatus {
     }
 
     #[must_use]
-    pub const fn into_inner(self) -> NTSTATUS {
-        self.0.cast_signed()
+    pub const fn into_inner(self) -> u32 {
+        self.0
     }
 
     #[must_use]

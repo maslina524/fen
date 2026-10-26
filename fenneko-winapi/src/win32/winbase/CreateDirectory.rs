@@ -1,10 +1,13 @@
 use core::ptr;
 
 use crate::{
-    ntstatus::Ntstatus, raw::{
+    ntstatus::Ntstatus,
+    raw::{
         IO_STATUS_BLOCK, OBJECT_ATTRIBUTES,
         ntdll::{self, NtClose},
-    }, unicode::UnicodeString, win32::fileapi::{FileDispose, FileFlags},
+    },
+    unicode::UnicodeString,
+    win32::fileapi::{FileDispose, FileFlags},
 };
 
 const FILE_LIST_DIRECTORY: u32 = 1;

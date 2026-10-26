@@ -7,9 +7,9 @@ extern crate alloc;
 pub mod allocator;
 #[macro_use]
 pub mod macros;
+pub mod ntstatus;
 pub mod raw;
 pub mod unicode;
-pub mod ntstatus;
 pub mod win32;
 
 use raw::HANDLE;

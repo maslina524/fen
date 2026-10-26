@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::raw::NTSTATUS;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -5,18 +7,19 @@ pub enum Severity {
     Success,
     Info,
     Warn,
-    Error
+    Error,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Customer {
     Microsoft,
-    Other
+    Other,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
 pub enum Facility {
+    Null,
     Debugger,
     RpcRuntime,
     RpcStubs,
@@ -44,13 +47,14 @@ pub enum Facility {
     Hypervisor,
     Ipsec,
     MaximumValue,
-    Unknown(u16)
+    Unknown(u16),
 }
 
 impl Facility {
     #[must_use]
     pub const fn from_raw(value: u16) -> Self {
         match value {
+            0x000 => Self::Null,
             0x001 => Self::Debugger,
             0x002 => Self::RpcRuntime,
             0x003 => Self::RpcStubs,
@@ -83,7 +87,7 @@ impl Facility {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Ntstatus(u32);
 
 impl Ntstatus {
@@ -110,7 +114,7 @@ impl Ntstatus {
             0b01 => Severity::Info,
             0b10 => Severity::Warn,
             0b11 => Severity::Error,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -121,14 +125,13 @@ impl Ntstatus {
 
     #[must_use]
     pub const fn facility(self) -> Facility {
-        let val = self.0 >> 16;
+        let val = (self.0 >> 16) & 0x0FFF;
         Facility::from_raw(val as u16)
     }
 
     #[must_use]
     pub const fn customer(self) -> Customer {
-        let val = self.0 >> 29 == 1;
-        if val {
+        if (self.0 >> 29) & 1 == 1 {
             Customer::Microsoft
         } else {
             Customer::Other
@@ -138,6 +141,23 @@ impl Ntstatus {
     #[must_use]
     pub const fn is_microsoft(self) -> bool {
         matches!(self.customer(), Customer::Microsoft)
+    }
+}
+
+impl fmt::Display for Ntstatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:x}", self.into_inner())
+    }
+}
+
+impl fmt::Debug for Ntstatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Ntstatus")
+            .field("code", &self.code())
+            .field("facility", &self.facility())
+            .field("customer", &self.customer())
+            .field("severity", &self.severity())
+            .finish()
     }
 }
 
@@ -169,5 +189,10 @@ mod tests {
     fn code_test() {
         assert_eq!(TIMEOUT.code(), 0x0102);
         assert_eq!(INVALID_HANDLE.code(), 0x08);
+    }
+
+    #[test]
+    fn debug_print_test() {
+        println!("{INVALID_HANDLE:?}");
     }
 }

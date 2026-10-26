@@ -1,7 +1,7 @@
 use crate::raw::types as t;
 
 /// Wine Source
-/// <https://github.com/wine-mirror/wine/blob/master/include/winternl.h#L498>
+/// <https://github.com/wine-mirror/wine/blob/master/include/winternl.h#L384>
 #[repr(C)]
 pub struct PEB {
     pub InheritedAddressSpace: t::BYTE,

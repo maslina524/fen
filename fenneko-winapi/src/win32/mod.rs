@@ -4,3 +4,4 @@ pub mod handleapi;
 pub mod heapapi;
 pub mod processenv;
 pub mod processthreadsapi;
+pub mod winbase;

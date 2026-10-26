@@ -8,9 +8,7 @@ use crate::{
     win32::fileapi::{FileAccess, FileHandle},
 };
 
-mod options {
-    pub const NON_DIRECTORY_FILE: u32 = 1 << 6;
-}
+pub const NON_DIRECTORY_FILE: u32 = 1 << 6;
 
 const NT_CREATE: u32 = 2;
 const NT_OVERWRITE_IF: u32 = 5;
@@ -151,7 +149,7 @@ fn create_file_inner(
             flags.build(),
             share as u32,
             create as u32,
-            options::NON_DIRECTORY_FILE,
+            NON_DIRECTORY_FILE,
             ptr::null_mut(),
             0,
         )

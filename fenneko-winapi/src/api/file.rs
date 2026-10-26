@@ -141,10 +141,8 @@ mod tests {
     fn get_file_attrs_test() {
         let path = concat!(env!("CARGO_MANIFEST_DIR"), r"\Cargo.toml");
         println!("{path:?}");
-        let encoded: Vec<u16> = path
-            .encode_utf16()
-            .collect();
-        
+        let encoded: Vec<u16> = path.encode_utf16().collect();
+
         let attrs = GetFileAttributes(&encoded).expect("Failed to get file attrs");
         assert_eq!(
             attrs,

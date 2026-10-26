@@ -6,10 +6,10 @@ extern crate alloc;
 
 pub mod allocator;
 pub mod api;
-pub mod handle;
 pub mod macros;
 pub mod raw;
 pub mod unicode;
+pub mod win32;
 
 use raw::HANDLE;
 

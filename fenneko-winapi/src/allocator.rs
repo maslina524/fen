@@ -6,7 +6,7 @@ use core::{
 
 use crate::{
     Handle,
-    api::alloc::{
+    win32::heapapi::{
         GetProcessHeap, HeapAlloc, HeapFlags, HeapFree, HeapHandle, HeapPtr, HeapReAlloc,
     },
 };

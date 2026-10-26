@@ -2,7 +2,11 @@ use core::mem::ManuallyDrop;
 
 use crate::win32::fileapi::{FileHandle, Write};
 
-import!(GetStdHandle, SetConsoleOutputCP);
+pub mod GetStdHandle;
+pub use GetStdHandle::*;
+
+pub mod SetConsoleOutputCP;
+pub use SetConsoleOutputCP::*;
 
 pub type ConsoleHandle = ManuallyDrop<FileHandle<Write>>;
 

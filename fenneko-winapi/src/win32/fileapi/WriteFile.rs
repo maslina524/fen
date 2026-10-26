@@ -1,6 +1,10 @@
 use core::ptr;
 
-use crate::{Handle as _, raw::{IO_STATUS_BLOCK, NTSTATUS, ntdll}, win32::fileapi::{FileHandle, CanWrite}};
+use crate::{
+    Handle as _,
+    raw::{IO_STATUS_BLOCK, NTSTATUS, ntdll},
+    win32::fileapi::{CanWrite, FileHandle},
+};
 
 /// # Errors
 ///

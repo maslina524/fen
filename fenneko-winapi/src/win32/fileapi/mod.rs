@@ -2,7 +2,14 @@ use core::marker::PhantomData;
 
 use crate::{Handle, raw::HANDLE, win32::handleapi::CloseHandle};
 
-import!(CreateFile, GetFileAttributes, WriteFile);
+pub mod CreateFile;
+pub use CreateFile::*;
+
+pub mod GetFileAttributes;
+pub use GetFileAttributes::*;
+
+pub mod WriteFile;
+pub use WriteFile::*;
 
 mod_sealed!();
 pub trait FileAccess: sealed::Sealed {

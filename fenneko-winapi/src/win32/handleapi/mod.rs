@@ -1,1 +1,2 @@
-import!(CloseHandle);
+pub mod CloseHandle;
+pub use CloseHandle::*;

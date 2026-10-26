@@ -1,6 +1,10 @@
 use core::mem::ManuallyDrop;
 
-use crate::{Handle as _, raw::ntdll, win32::{console::ConsoleHandle, fileapi::FileHandle}};
+use crate::{
+    Handle as _,
+    raw::ntdll,
+    win32::{console::ConsoleHandle, fileapi::FileHandle},
+};
 
 #[derive(Clone, Copy)]
 pub enum StdHandle {

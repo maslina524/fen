@@ -1,4 +1,5 @@
-import!(GetCommandLine);
+pub mod GetCommandLine;
+pub use GetCommandLine::*;
 
 #[cfg(test)]
 mod tests {

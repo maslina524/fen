@@ -1,6 +1,5 @@
-use core::slice;
-
 use alloc::string::String;
+use core::slice;
 
 use crate::raw::ntdll;
 

@@ -2,7 +2,17 @@ use core::{marker::PhantomData, ptr::NonNull};
 
 use crate::{Handle, raw::HANDLE};
 
-import!(GetProcessHeap, HeapAlloc, HeapFree, HeapReAlloc);
+pub mod GetProcessHeap;
+pub use GetProcessHeap::*;
+
+pub mod HeapAlloc;
+pub use HeapAlloc::*;
+
+pub mod HeapFree;
+pub use HeapFree::*;
+
+pub mod HeapReAlloc;
+pub use HeapReAlloc::*;
 
 mod_sealed!();
 pub trait FlagTag: sealed::Sealed {}

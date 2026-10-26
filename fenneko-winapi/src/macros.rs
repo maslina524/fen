@@ -8,15 +8,6 @@ macro_rules! NT_SUCCESS {
     ($val:expr) => {{ $val as $crate::raw::NTSTATUS >= 0 }};
 }
 
-macro_rules! import {
-    ($($name:ident),+ $(,)?) => {
-        $(
-            pub mod $name;
-            pub use $name::*;
-        )+
-    };
-}
-
 macro_rules! impl_tag {
     ($trait:ident : $($name:ident),+ $(,)?) => {
         $(

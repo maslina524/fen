@@ -1,1 +1,2 @@
-import!(ExitProcess);
+pub mod ExitProcess;
+pub use ExitProcess::*;

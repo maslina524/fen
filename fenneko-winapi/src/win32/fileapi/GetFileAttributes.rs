@@ -1,4 +1,7 @@
-use crate::{raw::{FILE_BASIC_INFORMATION, NTSTATUS, OBJECT_ATTRIBUTES, ntdll}, unicode::UnicodeString};
+use crate::{
+    raw::{FILE_BASIC_INFORMATION, NTSTATUS, OBJECT_ATTRIBUTES, ntdll},
+    unicode::UnicodeString,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ItemType {

@@ -12,7 +12,7 @@ macro_rules! import {
     ($($name:ident),+ $(,)?) => {
         $(
             pub mod $name;
-            pub use $name::$name;
+            pub use $name::*;
         )+
     };
 }

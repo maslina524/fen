@@ -41,9 +41,9 @@ impl<Tag> Handle for FileHandle<Tag> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        api::console::{GetStdHandle, StdHandle},
-        win32::fileapi::GetFileAttributes::{ItemAttributes, ItemType},
+    use crate::win32::{
+        console::{GetStdHandle, StdHandle},
+        fileapi::GetFileAttributes::{ItemAttributes, ItemType},
     };
 
     #[test]

@@ -5,7 +5,6 @@
 extern crate alloc;
 
 pub mod allocator;
-pub mod api;
 #[macro_use]
 pub mod macros;
 pub mod raw;

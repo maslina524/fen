@@ -1,20 +1,10 @@
-use crate::{
-    Handle,
-    raw::{kernel32, ntdll},
-    win32::fileapi::{FileHandle, FileTag::Write},
-};
+use crate::{Handle as _, raw::ntdll, win32::fileapi::{FileHandle, FileTag::Write}};
 
 #[derive(Clone, Copy)]
 pub enum StdHandle {
     Stdout,
     Stderr,
     Stdin,
-}
-
-#[derive(Clone, Copy)]
-#[repr(u32)]
-pub enum CodePage {
-    Utf8 = 65001,
 }
 
 /// # Panics
@@ -52,23 +42,4 @@ pub fn GetStdHandle(typ: StdHandle) -> Option<FileHandle<Write>> {
     }
 
     Some(FileHandle::from_raw(val))
-}
-
-pub fn SetConsoleOutputCP(code_page: CodePage) {
-    // SAFETY: wCodePage is valid, the return value is not checked, I
-    // will check it when I create my own implementation, for now it
-    // stays like this
-    unsafe { kernel32::SetConsoleOutputCP(code_page as u32) };
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn get_handles_test() {
-        GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle");
-        GetStdHandle(StdHandle::Stderr).expect("Failed to get std handle");
-        GetStdHandle(StdHandle::Stdin).expect("Failed to get std handle");
-    }
 }

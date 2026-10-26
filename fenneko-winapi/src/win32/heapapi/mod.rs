@@ -2,14 +2,6 @@ use core::{marker::PhantomData, ptr::NonNull};
 
 use crate::{Handle, raw::HANDLE};
 
-macro_rules! import {
-    ($($name:ident),+ $(,)?) => {
-        $(
-            pub mod $name;
-            pub use $name::$name;
-        )+
-    };
-}
 import!(GetProcessHeap, HeapAlloc, HeapFree, HeapReAlloc);
 
 pub(crate) mod HeapTag {

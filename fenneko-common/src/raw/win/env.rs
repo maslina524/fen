@@ -1,6 +1,6 @@
 use alloc::{string::String, sync::Arc, vec::Vec};
 
-use winapi::api::process::GetCommandLine;
+use winapi::win32::processenv::GetCommandLine;
 
 pub mod consts {
     pub const OS: &str = "windows";

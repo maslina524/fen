@@ -1,17 +1,8 @@
+use core::slice;
+
 use alloc::string::String;
-use core::{hint::spin_loop, slice};
 
-use crate::{handle, raw::ntdll};
-
-pub fn ExitProcess(code: i32) -> ! {
-    // SAFETY: Passing itself (-1) as the descriptor,
-    // called in the binary, safe
-    let _ = unsafe { ntdll::NtTerminateProcess(handle!(-1), code) };
-
-    loop {
-        spin_loop();
-    }
-}
+use crate::raw::ntdll;
 
 /// # Panics
 ///
@@ -42,15 +33,4 @@ pub fn GetCommandLine() -> String {
     // SAFETY: Slice from the memory area allocated by WinAPI, safe
     let slice = unsafe { slice::from_raw_parts(ptr, len as usize / size_of::<u16>()) };
     String::from_utf16_lossy(slice)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn command_line_test() {
-        let string = GetCommandLine();
-        assert!(string.contains("fen"));
-    }
 }

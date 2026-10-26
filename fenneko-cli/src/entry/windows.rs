@@ -1,6 +1,6 @@
 use core::arch::global_asm;
 
-use winapi::api::process::ExitProcess;
+use winapi::win32::processthreadsapi::ExitProcess;
 
 #[cfg(target_arch = "x86_64")]
 global_asm!(

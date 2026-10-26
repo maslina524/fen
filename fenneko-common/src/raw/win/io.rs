@@ -1,8 +1,8 @@
 use core::sync::atomic::{AtomicBool, Ordering::Relaxed};
 
-use winapi::api::{
-    console::{CodePage, GetStdHandle, SetConsoleOutputCP, StdHandle},
-    file::{FileHandle, Write, WriteFile},
+use winapi::{
+    api::console::{CodePage, GetStdHandle, SetConsoleOutputCP, StdHandle},
+    win32::fileapi::{FileHandle, FileTag::Write, WriteFile},
 };
 
 pub static IS_UTF8: AtomicBool = AtomicBool::new(false);

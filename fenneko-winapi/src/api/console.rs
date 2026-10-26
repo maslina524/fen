@@ -1,7 +1,7 @@
 use crate::{
     Handle,
-    api::file::{FileHandle, Write},
     raw::{kernel32, ntdll},
+    win32::fileapi::{FileHandle, FileTag::Write},
 };
 
 #[derive(Clone, Copy)]

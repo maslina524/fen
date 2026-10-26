@@ -16,3 +16,28 @@ macro_rules! import {
         )+
     };
 }
+
+macro_rules! impl_tag {
+    ($trait:ident : $($name:ident),+ $(,)?) => {
+        $(
+            impl $trait for $name {}
+        )+
+    };
+}
+
+macro_rules! mod_sealed {
+    () => {
+        mod sealed {
+            pub trait Sealed {}
+        }
+    };
+}
+
+macro_rules! impl_sealed {
+    ($trait:ident : $($name:ident),+ $(,)?) => {
+        $(  
+            impl sealed::Sealed for $name {}
+            impl $trait for $name {}
+        )+
+    };
+}

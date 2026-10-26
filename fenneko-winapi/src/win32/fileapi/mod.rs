@@ -4,27 +4,29 @@ use crate::{Handle, raw::HANDLE, win32::handleapi::CloseHandle};
 
 import!(WriteFile, GetFileAttributes);
 
-pub mod FileTag {
-    pub trait CanRead {}
-    pub trait CanWrite {}
+mod_sealed!();
+pub trait FileAccess: sealed::Sealed {}
 
-    pub struct Read;
-    pub struct Write;
-    pub struct All;
+pub trait CanRead: FileAccess {}
+pub trait CanWrite: FileAccess {}
 
-    impl CanRead for Read {}
-    impl CanRead for All {}
-    impl CanWrite for Write {}
-    impl CanWrite for All {}
-}
+pub struct Read;
+pub struct Write;
+pub struct All;
+
+impl_tag!(CanRead: Read, All);
+impl_tag!(CanWrite: Write, All);
+
+impl_sealed!(FileAccess: Read, Write, All);
+
 
 #[repr(transparent)]
-pub struct FileHandle<Tag> {
+pub struct FileHandle<Access> {
     raw: HANDLE,
-    _marker: PhantomData<Tag>,
+    _marker: PhantomData<Access>,
 }
 
-impl<Tag> Handle for FileHandle<Tag> {
+impl<Access> Handle for FileHandle<Access> {
     fn from_raw(raw: HANDLE) -> Self {
         Self {
             raw,
@@ -37,7 +39,7 @@ impl<Tag> Handle for FileHandle<Tag> {
     }
 }
 
-impl<Tag> Drop for FileHandle<Tag> {
+impl<Access> Drop for FileHandle<Access> {
     fn drop(&mut self) {
         CloseHandle(self);
     }

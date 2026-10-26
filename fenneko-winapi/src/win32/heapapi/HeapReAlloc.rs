@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 
 use crate::win32::heapapi::HeapFlags;
-use crate::win32::heapapi::HeapTag::ReAlloc;
+use crate::win32::heapapi::ReAlloc;
 use crate::win32::heapapi::HeapHandle;
 use crate::win32::heapapi::HeapPtr;
 use crate::raw::ntdll;

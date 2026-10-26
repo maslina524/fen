@@ -1,6 +1,6 @@
 use core::mem::ManuallyDrop;
 
-use crate::win32::fileapi::{FileHandle, FileTag::Write};
+use crate::win32::fileapi::{FileHandle, Write};
 
 import!(GetStdHandle, SetConsoleOutputCP);
 

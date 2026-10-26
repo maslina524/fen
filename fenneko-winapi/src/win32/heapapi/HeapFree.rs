@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use crate::{Handle as _, raw::ntdll, win32::heapapi::{HeapFlags, HeapHandle, HeapPtr, HeapTag::Free}};
+use crate::{Handle as _, raw::ntdll, win32::heapapi::{HeapFlags, HeapHandle, HeapPtr, Free}};
 
 impl HeapFlags<Free> {
     #[must_use]

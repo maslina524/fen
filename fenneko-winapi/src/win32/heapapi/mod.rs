@@ -4,19 +4,22 @@ use crate::{Handle, raw::HANDLE};
 
 import!(GetProcessHeap, HeapAlloc, HeapFree, HeapReAlloc);
 
-pub mod HeapTag {
-    pub struct Alloc;
-    pub struct Free;
-    pub struct ReAlloc;
-}
+mod_sealed!();
+pub trait FlagTag: sealed::Sealed {}
+
+pub struct Alloc;
+pub struct Free;
+pub struct ReAlloc;
+
+impl_sealed!(FlagTag: Alloc, Free, ReAlloc);
 
 #[derive(Clone, Copy)]
-pub struct HeapFlags<Tag> {
+pub struct HeapFlags<T: FlagTag> {
     val: u32,
-    _marker: PhantomData<Tag>,
+    _marker: PhantomData<T>,
 }
 
-impl<Tag> HeapFlags<Tag> {
+impl<T: FlagTag> HeapFlags<T> {
     const HEAP_GENERATE_EXCEPTIONS: u32 = 0b100;
     const HEAP_NO_SERIALIZE: u32 = 0b1;
     const HEAP_REALLOC_IN_PLACE_ONLY: u32 = 0b10000;

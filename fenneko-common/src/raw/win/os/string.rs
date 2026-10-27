@@ -128,12 +128,26 @@ impl From<&str> for OsString {
     }
 }
 
+impl From<&OsStr> for OsString {
+    fn from(value: &OsStr) -> Self {
+        Self {
+            inner: value.as_slice().to_vec(),
+        }
+    }
+}
+
 impl fmt::Display for OsString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for ch in self.chars() {
             f.write_char(ch)?;
         }
         Ok(())
+    }
+}
+
+impl fmt::Debug for OsString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self}")
     }
 }
 

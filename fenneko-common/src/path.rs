@@ -307,10 +307,30 @@ impl PathBuf {
     }
 }
 
+impl fmt::Display for PathBuf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner)
+    }
+}
+
+impl fmt::Debug for PathBuf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner)
+    }
+}
+
 impl From<&str> for PathBuf {
     fn from(value: &str) -> Self {
         Self {
             inner: OsString::from(value),
+        }
+    }
+}
+
+impl From<Path> for PathBuf {
+    fn from(value: Path) -> Self {
+        Self {
+            inner: OsString::from(value.inner.as_os_str()),
         }
     }
 }

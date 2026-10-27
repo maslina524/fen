@@ -7,6 +7,33 @@ use crate::{
 };
 
 pub type CreateDirError = fs::CreateError;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum OpenWithDirsError {
+    FailedToOpen(OpenError),
+    FailedToCreateDirs(CreateDirsError)
+}
+
+impl From<CreateDirsError> for OpenWithDirsError {
+    fn from(value: CreateDirsError) -> Self {
+        Self::FailedToCreateDirs(value)
+    }
+}
+
+impl From<OpenError> for OpenWithDirsError {
+    fn from(value: OpenError) -> Self {
+        Self::FailedToOpen(value)
+    }
+}
+
+impl fmt::Display for OpenWithDirsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Error for OpenWithDirsError {}
+
 pub struct File<A: fs::Access>(fs::RawHandle<A>);
 
 impl<A: fs::Access> File<A> {
@@ -26,6 +53,18 @@ impl<A: fs::Access> File<A> {
     /// Returns `Err` if the file could not be created.
     pub fn create<T: Into<Path>>(path: T) -> Result<Self, OpenError> {
         fs::create_new_file(path.into().as_os_str().as_slice()).map(Self::from_handle)
+    }
+
+    /// # Errors
+    ///
+    /// Returns `Err` if the file could not be created.
+    pub fn create_with_dirs<T: Into<Path>>(path: T) -> Result<Self, OpenWithDirsError> {
+        let path = path.into();
+        let mut dirs = PathBuf::from(path.clone());
+        let _ = dirs.pop();
+
+        create_dirs(dirs)?;
+        Self::create(path).map_err(Into::into)
     }
 }
 
@@ -212,5 +251,16 @@ mod tests {
 
         let attrs = metadata("NotExists");
         assert!(matches!(attrs, Err(AttributesError::FileNotFound)));
+    }
+
+    #[test]
+    fn create_file_with_dirs_test() {
+        let path = "FilePathFirst/Second/Third/File";
+        {
+            let _ = File::<AccessRead>::create_with_dirs(path).expect("Failed to create file with dirs");
+        }
+
+        assert!(std::fs::exists(path).expect("Failed to check whether the file was created"));
+        remove_dir_all("FilePathFirst");
     }
 }

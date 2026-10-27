@@ -8,13 +8,14 @@ use crate::{
     win32::fileapi::{FileAccess, FileHandle},
 };
 
-pub const NON_DIRECTORY_FILE: u32 = 1 << 6;
-
 const NT_CREATE: u32 = 2;
 const NT_OVERWRITE_IF: u32 = 5;
 const NT_OPEN: u32 = 1;
 const NT_OPEN_IF: u32 = 3;
 const NT_OVERWRITE: u32 = 4;
+
+const SYNCHRONIZE: u32 = 0x0010_0000;
+const SYNC_FLAGS: u32 = 0x0000_0010 | 0x0000_0020;
 
 #[repr(u32)]
 #[derive(Debug, Clone, Copy)]
@@ -44,18 +45,17 @@ pub enum CreateFileError {
 
 #[repr(transparent)]
 #[derive(Debug, Default, Clone, Copy)]
-pub struct FileFlags(u32);
+pub struct FileAttributes(u32);
 
-impl FileFlags {
-    const FILE_ATTRIBUTE_ARCHIVE: u32 = 1 << 5;
-    const FILE_ATTRIBUTE_ENCRYPTED: u32 = 1 << 14;
-    const FILE_ATTRIBUTE_HIDDEN: u32 = 1 << 1;
-    const FILE_ATTRIBUTE_NORMAL: u32 = 1 << 7;
-    const FILE_ATTRIBUTE_OFFLINE: u32 = 1 << 12;
-    const FILE_ATTRIBUTE_READONLY: u32 = 1;
-    const FILE_ATTRIBUTE_SYSTEM: u32 = 1 << 2;
-    const FILE_ATTRIBUTE_TEMPORARY: u32 = 1 << 8;
-    const FILE_ATTRIBUTE_SYNCHRONIZE: u32 = 1 << 20;
+impl FileAttributes {
+    const ARCHIVE: u32 = 0x0000_0020;
+    const ENCRYPTED: u32 = 0x0000_4000;
+    const HIDDEN: u32 = 0x0000_0002;
+    const NORMAL: u32 = 0x0000_0080;
+    const OFFLINE: u32 = 0x0000_1000;
+    const READONLY: u32 = 0x0000_0001;
+    const SYSTEM: u32 = 0x0000_0004;
+    const TEMPORARY: u32 = 0x0000_0100;
 
     #[must_use]
     pub const fn new() -> Self {
@@ -69,47 +69,77 @@ impl FileFlags {
 
     #[must_use]
     pub const fn readonly(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_READONLY)
+        Self(self.0 | Self::READONLY)
     }
 
     #[must_use]
     pub const fn hidden(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_HIDDEN)
+        Self(self.0 | Self::HIDDEN)
     }
 
     #[must_use]
     pub const fn system(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_SYSTEM)
+        Self(self.0 | Self::SYSTEM)
     }
 
     #[must_use]
     pub const fn archive(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_ARCHIVE)
+        Self(self.0 | Self::ARCHIVE)
     }
 
     #[must_use]
     pub const fn normal(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_NORMAL)
+        Self(self.0 | Self::NORMAL)
     }
 
     #[must_use]
     pub const fn temp(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_TEMPORARY)
+        Self(self.0 | Self::TEMPORARY)
     }
 
     #[must_use]
     pub const fn offline(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_OFFLINE)
+        Self(self.0 | Self::OFFLINE)
     }
 
     #[must_use]
     pub const fn encrypted(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_ENCRYPTED)
+        Self(self.0 | Self::ENCRYPTED)
+    }
+}
+
+#[repr(transparent)]
+#[derive(Debug, Default, Clone, Copy)]
+pub struct CreateOptions(u32);
+
+impl CreateOptions {
+    const NON_DIRECTORY_FILE: u32 = 0x0000_0040;
+    const SYNCHRONOUS_IO_ALERT: u32 = 0x0000_0010;
+    const SYNCHRONOUS_IO_NONALERT: u32 = 0x0000_0020;
+
+    #[must_use]
+    pub const fn new() -> Self {
+        Self(0)
+    }
+
+    #[must_use]
+    pub const fn build(self) -> u32 {
+        self.0
+    }
+
+    #[must_use]
+    pub const fn non_directory(self) -> Self {
+        Self(self.0 | Self::NON_DIRECTORY_FILE)
     }
 
     #[must_use]
     pub const fn synchronize(self) -> Self {
-        Self(self.0 | Self::FILE_ATTRIBUTE_SYNCHRONIZE)
+        Self(self.0 | Self::SYNCHRONOUS_IO_NONALERT)
+    }
+
+    #[must_use]
+    pub const fn synchronize_alert(self) -> Self {
+        Self(self.0 | Self::SYNCHRONOUS_IO_ALERT)
     }
 }
 
@@ -117,15 +147,16 @@ impl FileFlags {
 ///
 /// On error returns `CreateFileError`, which is either a Unicode string
 /// allocation error or a `NtCreateFile` call error (Ntstatus).
-#[allow(unused_variables)]
 pub fn CreateFile<A: FileAccess>(
     path: &[u16],
     share: FileShare,
     create: FileDispose,
-    flags: FileFlags,
+    attributes: FileAttributes,
+    options: CreateOptions,
 ) -> Result<FileHandle<A>, CreateFileError> {
     let access_val = A::raw();
-    create_file_inner(path, access_val, share, create, flags).map(FileHandle::from_raw)
+    create_file_inner(path, access_val, share, create, attributes, options)
+        .map(FileHandle::from_raw)
 }
 
 fn create_file_inner(
@@ -133,8 +164,15 @@ fn create_file_inner(
     access: u32,
     share: FileShare,
     create: FileDispose,
-    flags: FileFlags,
+    attributes: FileAttributes,
+    options: CreateOptions,
 ) -> Result<HANDLE, CreateFileError> {
+    let access = if options.build() & SYNC_FLAGS != 0 {
+        access | SYNCHRONIZE
+    } else {
+        access
+    };
+    
     let unicode = UnicodeString::from_path(path).ok_or(CreateFileError::UnicodePathAllocate)?;
 
     let mut attrs = OBJECT_ATTRIBUTES {
@@ -152,10 +190,10 @@ fn create_file_inner(
             &raw mut attrs,
             &raw mut io,
             ptr::null(),
-            flags.build(),
+            attributes.build(),
             share as u32,
             create as u32,
-            NON_DIRECTORY_FILE,
+            options.build(),
             ptr::null_mut(),
             0,
         )

@@ -113,7 +113,8 @@ mod tests {
             &path,
             FileShare::ReadWrite,
             FileDispose::OpenAlways,
-            FileFlags::new().normal(),
+            FileAttributes::new().normal(),
+            CreateOptions::new().synchronize(),
         )
         .expect("Failed to open file");
     }

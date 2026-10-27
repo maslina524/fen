@@ -1,4 +1,9 @@
-use crate::{path::Path, raw::fs::{self, OpenError}};
+use core::fmt;
+
+use crate::{
+    path::Path,
+    raw::fs::{self, OpenError},
+};
 
 pub type CreateDirError = fs::CreateError;
 pub struct File<A: fs::Access>(fs::RawHandle<A>);
@@ -18,10 +23,20 @@ impl<A: fs::Access> File<A> {
 
 impl<A: fs::AccessCanWrite> File<A> {
     /// # Errors
-     ///
-     /// Returns `Err` if it failed to write data to the file.
-    pub fn write(&self, data: &[u8]) -> Result<usize, fs::WriteError> {
+    ///
+    /// Returns `Err` if it failed to write data to the file.
+    #[allow(clippy::needless_pass_by_ref_mut)]
+    pub fn write_all(&mut self, data: &[u8]) -> Result<usize, fs::WriteError> {
         fs::write_file(&self.0, data)
+    }
+}
+
+impl<A: fs::AccessCanWrite> fmt::Write for File<A> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        match self.write_all(s.as_bytes()) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(fmt::Error),
+        }
     }
 }
 
@@ -34,33 +49,62 @@ pub fn create_dir<T: Into<Path>>(path: T) -> Result<(), CreateDirError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::raw::fs::AccessWrite;
+    use core::fmt::Write as _;
 
     use super::*;
+    use crate::raw::fs::AccessWrite;
+
+    #[track_caller]
+    fn remove_dir<T: AsRef<std::path::Path>>(path: T) {
+        std::fs::remove_dir(path).expect("STD::FS::REMOVE_DIR FAILED");
+    }
+
+    #[track_caller]
+    fn remove_file<T: AsRef<std::path::Path>>(path: T) {
+        std::fs::remove_file(path).expect("STD::FS::REMOVE_FILE FAILED");
+    }
 
     #[test]
     fn create_dir_test() {
         let path = "CommonPath";
         create_dir(path).expect("Failed to create dir");
 
-        std::fs::remove_dir(path)
-            .expect("STD::FS::REMOVE_DIR FAILED: common::fs::create_dir executed successfully, but failed to remove the directory using std::fs::remove_dir");
+        remove_dir(path);
     }
 
     #[test]
     fn write_file_test() {
         let path = "WriteFile";
         std::fs::write(path, "").expect("STD::FS::WRITE FAILED");
-        
-        {
-            let file = File::<AccessWrite>::open(path).expect("Failed to open file");
-            file.write(b"WriteFile: common::fs::tests::write_file_test").expect("Failed to write to the file");
-        }    
 
-        let data = std::fs::read_to_string(path).expect("STD::FS::READ_TO_STRING FAILED");
+        let write_result = {
+            let mut file = File::<AccessWrite>::open(path).expect("Failed to open file");
+
+            file.write_all(b"WriteFile: common::fs::tests::write_file_test")
+        };
+
+        let data = std::fs::read_to_string(path).expect("STD::FS::READ FAILED");
+        remove_file(path);
+
+        write_result.expect("write_all failed");
         assert_eq!(data, "WriteFile: common::fs::tests::write_file_test");
+    }
 
-        std::fs::remove_file(path)
-            .expect("STD::FS::REMOVE_FILE FAILED: common::fs::File::write executed successfully, but failed to remove the file using std::fs::remove_file");
+    #[test]
+    fn fmt_file_test() {
+        let path = "FormatFile";
+        std::fs::write(path, "").expect("STD::FS::WRITE FAILED");
+
+        let write_result = {
+            let mut file = File::<AccessWrite>::open(path).expect("Failed to open file");
+            let fmt = format_args!("{}File: 2 + 2 = {}", "Format", 2 + 2);
+            file.write_fmt(fmt)
+        };
+
+        let data = std::fs::read_to_string(path).expect("STD::FS::READ FAILED");
+        remove_file(path);
+
+        write_result.expect("write_fmt failed");
+        assert_eq!(data, "FormatFile: 2 + 2 = 4");
     }
 }

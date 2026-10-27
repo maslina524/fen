@@ -6,14 +6,14 @@ mod tests {
     use std::fs;
 
     use super::*;
-    use crate::win32::fileapi::FileFlags;
+    use crate::win32::fileapi::FileAttributes;
 
     const FILE_ATTRIBUTE_HIDDEN: u32 = 1 << 1;
 
     #[test]
     fn create_directory_test() {
         let path: Vec<u16> = "NewDirectory".encode_utf16().collect();
-        CreateDirectory(&path, FileFlags::new()).expect("Failed to create dir");
+        CreateDirectory(&path, FileAttributes::new()).expect("Failed to create dir");
 
         let ret = fs::exists("NewDirectory").expect("fs::exists failed");
         assert!(ret);
@@ -29,7 +29,7 @@ mod tests {
         }
 
         let path: Vec<u16> = "HiddenDirectory".encode_utf16().collect();
-        CreateDirectory(&path, FileFlags::new().hidden()).expect("Failed to create dir");
+        CreateDirectory(&path, FileAttributes::new().hidden()).expect("Failed to create dir");
 
         let ret = fs::exists("HiddenDirectory").expect("fs::exists failed");
         assert!(ret);

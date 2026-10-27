@@ -7,7 +7,7 @@ use crate::{
         ntdll::{self, NtClose},
     },
     unicode::UnicodeString,
-    win32::fileapi::{FileDispose, FileFlags},
+    win32::fileapi::{FileAttributes, FileDispose},
 };
 
 const FILE_LIST_DIRECTORY: u32 = 1;
@@ -32,7 +32,7 @@ pub enum CreateError {
 ///
 /// On error returns `CreateDirError`, which is either a Unicode string
 /// allocation error or a `NtCreateFile` call error (Ntstatus).
-pub fn CreateDirectory(path: &[u16], flags: FileFlags) -> Result<(), CreateError> {
+pub fn CreateDirectory(path: &[u16], flags: FileAttributes) -> Result<(), CreateError> {
     let unicode = UnicodeString::from_path(path).ok_or(CreateError::UnicodePathAllocate)?;
 
     let mut attrs = OBJECT_ATTRIBUTES {

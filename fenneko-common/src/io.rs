@@ -24,7 +24,10 @@ impl Default for Stdout {
 
 impl fmt::Write for Stdout {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.write_all(s.as_bytes()).ok_or(fmt::Error).map(|_| ())
+        match self.write_all(s.as_bytes()) {
+            Some(_) => Ok(()),
+            None => Err(fmt::Error),
+        }
     }
 }
 

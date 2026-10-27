@@ -3,7 +3,7 @@ use core::{error::Error, fmt};
 use winapi::{
     ntstatus::Ntstatus,
     win32::{
-        fileapi::FileFlags,
+        fileapi::FileAttributes,
         winbase::{self, CreateDirectory},
     },
 };
@@ -34,17 +34,15 @@ impl fmt::Display for CreateError {
 
 impl Error for CreateError {}
 
-
 /// # Errors
 ///
 /// Returns `Err` if the directory could not be created.
-/// 
+///
 /// # Panics
 ///
 /// Panics if the path could not be converted to Unicode, this means:
 /// - `Path`/`OsStr` doesn't work correctly.
 /// - An invalid `&[u16]` is passed to the function.
-///
 pub fn create_dir(path: &[u16]) -> Result<(), CreateError> {
     const fn map_ntstatus(nt: Ntstatus) -> CreateError {
         use crate::raw::win::fs::CreateError as CE;
@@ -67,7 +65,7 @@ pub fn create_dir(path: &[u16]) -> Result<(), CreateError> {
         }
     }
 
-    let err = if let Err(e) = CreateDirectory(path, FileFlags::new().synchronize()) {
+    let err = if let Err(e) = CreateDirectory(path, FileAttributes::new()) {
         match e {
             winbase::CreateError::UnicodePathAllocate => panic!("Bad path"),
             winbase::CreateError::FailedToCreate(nt) => nt,

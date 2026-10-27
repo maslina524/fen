@@ -14,7 +14,6 @@ use crate::{
 /// for example the disk is full.
 pub fn WriteFile<T: CanWrite>(handle: &FileHandle<T>, buf: &[u8]) -> Result<usize, Ntstatus> {
     let mut info = IO_STATUS_BLOCK::default();
-    let mut offset = 0;
 
     // SAFETY: The descriptor, buffer, and its length are always valid
     let status = unsafe {
@@ -26,7 +25,7 @@ pub fn WriteFile<T: CanWrite>(handle: &FileHandle<T>, buf: &[u8]) -> Result<usiz
             &raw mut info,
             buf.as_ptr().cast_mut().cast(),
             buf.len() as u32,
-            &raw mut offset,
+            ptr::null(),
             ptr::null(),
         )
     };

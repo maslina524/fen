@@ -1,9 +1,15 @@
 use core::{error::Error, fmt};
 
-use winapi::{ntstatus::Ntstatus, win32::fileapi::{self, All, CanWrite, CreateFile, FileDispose, FileFlags, FileHandle, FileShare, Read, Write, WriteFile}};
-pub use winapi::win32::fileapi::FileAccess as Access;
-pub use winapi::win32::fileapi::CanRead as AccessCanRead;
-pub use winapi::win32::fileapi::CanWrite as AccessCanWrite;
+pub use winapi::win32::fileapi::{
+    CanRead as AccessCanRead, CanWrite as AccessCanWrite, FileAccess as Access,
+};
+use winapi::{
+    ntstatus::Ntstatus,
+    win32::fileapi::{
+        self, All, CanWrite, CreateFile, CreateOptions, FileAttributes, FileDispose, FileHandle,
+        FileShare, Read, Write, WriteFile,
+    },
+};
 
 pub type RawHandle<T> = FileHandle<T>;
 pub type AccessWrite = Write;
@@ -39,7 +45,7 @@ impl Error for OpenError {}
 /// # Errors
 ///
 /// Returns `Err` if the file could not be opened.
-/// 
+///
 /// # Panics
 ///
 /// Panics if the path could not be converted to Unicode, this means:
@@ -51,19 +57,23 @@ pub fn open_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
 
         #[allow(clippy::match_single_binding)]
         match nt {
-            _ => OE::Unknonw(nt)
+            _ => OE::Unknonw(nt),
         }
     }
 
-    let ret = CreateFile(path, FileShare::Read, FileDispose::OpenExisting, FileFlags::new().synchronize());
+    let ret = CreateFile(
+        path,
+        FileShare::Read,
+        FileDispose::OpenExisting,
+        FileAttributes::new(),
+        CreateOptions::new().non_directory().synchronize(),
+    );
     let err = match ret {
-        Err(e) => {
-            match e {
-                fileapi::CreateFileError::UnicodePathAllocate => panic!("Bad path"),
-                fileapi::CreateFileError::FailedToCreate(nt) => nt,
-            }
-        }
-        Ok(f) => return Ok(f)
+        Err(e) => match e {
+            fileapi::CreateFileError::UnicodePathAllocate => panic!("Bad path"),
+            fileapi::CreateFileError::FailedToCreate(nt) => nt,
+        },
+        Ok(f) => return Ok(f),
     };
 
     Err(map_ntstatus(err))
@@ -95,14 +105,14 @@ impl Error for WriteError {}
 /// # Errors
 ///
 /// Returns `Err` if it failed to write data to the file.
-/// 
+///
 /// # Panics
 ///
 /// Panics if the path could not be converted to Unicode, this means:
 /// - `Path`/`OsStr` doesn't work correctly.
 /// - An invalid `&[u16]` is passed to the function.
 pub fn write_file<A: CanWrite>(handle: &FileHandle<A>, buf: &[u8]) -> Result<usize, WriteError> {
-    const fn map_ntstatus(nt: Ntstatus) ->WriteError {
+    const fn map_ntstatus(nt: Ntstatus) -> WriteError {
         use crate::raw::fs::WriteError as WE;
 
         #[allow(clippy::match_single_binding)]
@@ -117,7 +127,7 @@ pub fn write_file<A: CanWrite>(handle: &FileHandle<A>, buf: &[u8]) -> Result<usi
             0xC000_000D => WE::InvalidParam,
             0xC000_00F2 | 0xC000_00AE => WE::NoData,
             0xC000_007F => WE::DiskFull,
-            _ => WE::Unknonw(nt)
+            _ => WE::Unknonw(nt),
         }
     }
 

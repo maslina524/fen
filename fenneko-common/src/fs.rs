@@ -1,5 +1,7 @@
 use core::fmt;
 
+use winapi::win32::fileapi::FileAttributes;
+
 use crate::{
     path::Path,
     raw::fs::{self, OpenError},
@@ -18,6 +20,13 @@ impl<A: fs::Access> File<A> {
     /// Returns `Err` if the file could not be opened.
     pub fn open<T: Into<Path>>(path: T) -> Result<Self, OpenError> {
         fs::open_file(path.into().as_os_str().as_slice()).map(Self::from_handle)
+    }
+
+    /// # Errors
+    ///
+    /// Returns `Err` if the file could not be created.
+    pub fn create<T: Into<Path>>(path: T) -> Result<Self, OpenError> {
+        fs::create_new_file(path.into().as_os_str().as_slice()).map(Self::from_handle)
     }
 }
 
@@ -44,7 +53,14 @@ impl<A: fs::AccessCanWrite> fmt::Write for File<A> {
 ///
 /// Returns `Err` if the directory could not be created.
 pub fn create_dir<T: Into<Path>>(path: T) -> Result<(), CreateDirError> {
-    fs::create_dir(path.into().as_os_str().as_slice())
+    fs::create_dir(path.into().as_os_str().as_slice(), FileAttributes::new())
+}
+
+/// # Errors
+///
+/// Returns `Err` if the directory could not be created.
+pub fn create_dir_with_attrs<T: Into<Path>>(path: T, attrs: FileAttributes) -> Result<(), CreateDirError> {
+    fs::create_dir(path.into().as_os_str().as_slice(), attrs)
 }
 
 #[cfg(test)]
@@ -52,7 +68,7 @@ mod tests {
     use core::fmt::Write as _;
 
     use super::*;
-    use crate::raw::fs::AccessWrite;
+    use crate::raw::fs::{AccessWrite, AccessRead};
 
     #[track_caller]
     fn remove_dir<T: AsRef<std::path::Path>>(path: T) {
@@ -106,5 +122,17 @@ mod tests {
 
         write_result.expect("write_fmt failed");
         assert_eq!(data, "FormatFile: 2 + 2 = 4");
+    }
+
+    #[test]
+    fn create_file_test() {
+        let path = "CreatedFile";
+        
+        {
+            File::<AccessRead>::create(path).expect("Failed to create file");
+        }
+
+        assert!(std::fs::exists(path).expect("Failed to check whether the file was created"));
+        remove_file(path);
     }
 }

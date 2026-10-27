@@ -4,8 +4,7 @@ pub use winapi::win32::fileapi::{
     CanRead as AccessCanRead, CanWrite as AccessCanWrite, FileAccess as Access,
 };
 use winapi::{
-    ntstatus::Ntstatus,
-    win32::fileapi::{
+    ntstatus::Ntstatus, win32::fileapi::{
         self, All, CanWrite, CreateFile, CreateOptions, FileAttributes, FileDispose, FileHandle,
         FileShare, Read, Write, WriteFile,
     },
@@ -51,7 +50,8 @@ impl Error for OpenError {}
 /// Panics if the path could not be converted to Unicode, this means:
 /// - `Path`/`OsStr` doesn't work correctly.
 /// - An invalid `&[u16]` is passed to the function.
-pub fn open_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
+#[track_caller]
+fn open_template<A: Access>(path: &[u16], dispose: FileDispose) -> Result<RawHandle<A>, OpenError> {
     const fn map_ntstatus(nt: Ntstatus) -> OpenError {
         use crate::raw::fs::OpenError as OE;
 
@@ -64,7 +64,7 @@ pub fn open_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
     let ret = CreateFile(
         path,
         FileShare::Read,
-        FileDispose::OpenExisting,
+        dispose,
         FileAttributes::new(),
         CreateOptions::new().non_directory().synchronize(),
     );
@@ -77,6 +77,27 @@ pub fn open_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
     };
 
     Err(map_ntstatus(err))
+}
+
+/// # Errors
+///
+/// Returns `Err` if the file could not be opened.
+pub fn open_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
+    open_template(path, FileDispose::OpenExisting)
+}
+
+/// # Errors
+///
+/// Returns `Err` if the file could not be opened.
+pub fn create_always_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
+    open_template(path, FileDispose::CreateAlways)
+}
+
+/// # Errors
+///
+/// Returns `Err` if the file could not be opened.
+pub fn create_new_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
+    open_template(path, FileDispose::CreateNew)
 }
 
 #[derive(Debug)]

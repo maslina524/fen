@@ -43,7 +43,7 @@ impl Error for CreateError {}
 /// Panics if the path could not be converted to Unicode, this means:
 /// - `Path`/`OsStr` doesn't work correctly.
 /// - An invalid `&[u16]` is passed to the function.
-pub fn create_dir(path: &[u16]) -> Result<(), CreateError> {
+pub fn create_dir(path: &[u16], attrs: FileAttributes) -> Result<(), CreateError> {
     const fn map_ntstatus(nt: Ntstatus) -> CreateError {
         use crate::raw::win::fs::CreateError as CE;
 
@@ -65,7 +65,7 @@ pub fn create_dir(path: &[u16]) -> Result<(), CreateError> {
         }
     }
 
-    let err = if let Err(e) = CreateDirectory(path, FileAttributes::new()) {
+    let err = if let Err(e) = CreateDirectory(path, attrs) {
         match e {
             winbase::CreateError::UnicodePathAllocate => panic!("Bad path"),
             winbase::CreateError::FailedToCreate(nt) => nt,

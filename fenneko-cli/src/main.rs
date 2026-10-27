@@ -19,10 +19,11 @@ mod builtins;
 mod entry;
 mod options;
 mod render;
+mod output;
 
 use common::{io::Stdout, prelude::*};
 
-use crate::{actions::Action, render::Renderable};
+use crate::{actions::Action, output::Output, render::Renderable};
 
 extern crate alloc;
 
@@ -31,10 +32,6 @@ static ALLOCATOR: winapi::allocator::Allocator = winapi::allocator::Allocator;
 
 fn help(stdout: &mut Stdout) {
     let _ = actions::Help::run(None).unwrap().render_console(stdout);
-}
-
-fn version(stdout: &mut Stdout) {
-    let _ = options::Version::run(None).unwrap().render_console(stdout);
 }
 
 fn main() -> i32 {
@@ -48,10 +45,11 @@ fn main() -> i32 {
         return 0;
     };
 
-    match &*name {
-        "--version" | "-v" => version(&mut stdout),
-        _ => help(&mut stdout),
-    }
+    let output = match name.as_ref() {
+        "init" => Output::new(actions::Init::run(None)),
+        "--version" | "-v" => Output::new(options::Version::run(None)),
+        _ => Output::new(actions::Help::run(None)),
+    };
 
-    0
+    output.print()
 }

@@ -15,7 +15,7 @@ pub type AccessWrite = Write;
 pub type AccessAppend = Append;
 pub type AccessAll = All;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OpenError {
     PathNotFound,
     NameNotFound,
@@ -104,7 +104,7 @@ pub fn create_file_if_not_exists<A: Access>(path: &[u16]) -> Result<RawHandle<A>
     open_template(path, FileDispose::OpenAlways)
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WriteError {
     InvalidHandle,
     NotEnoughMemory,

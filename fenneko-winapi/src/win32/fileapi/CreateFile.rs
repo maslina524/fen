@@ -39,7 +39,7 @@ pub enum FileDispose {
 #[derive(Debug, Clone, Copy)]
 pub enum CreateFileError {
     UnicodePathAllocate,
-    CreateFile(Ntstatus),
+    FailedToCreate(Ntstatus),
 }
 
 #[repr(transparent)]
@@ -55,6 +55,7 @@ impl FileFlags {
     const FILE_ATTRIBUTE_READONLY: u32 = 1;
     const FILE_ATTRIBUTE_SYSTEM: u32 = 1 << 2;
     const FILE_ATTRIBUTE_TEMPORARY: u32 = 1 << 8;
+    const FILE_ATTRIBUTE_SYNCHRONIZE: u32 = 1 << 20;
 
     #[must_use]
     pub const fn new() -> Self {
@@ -104,6 +105,11 @@ impl FileFlags {
     #[must_use]
     pub const fn encrypted(self) -> Self {
         Self(self.0 | Self::FILE_ATTRIBUTE_ENCRYPTED)
+    }
+
+    #[must_use]
+    pub const fn synchronize(self) -> Self {
+        Self(self.0 | Self::FILE_ATTRIBUTE_SYNCHRONIZE)
     }
 }
 
@@ -158,6 +164,6 @@ fn create_file_inner(
     if ret.is_success() {
         Ok(out)
     } else {
-        Err(CreateFileError::CreateFile(ret))
+        Err(CreateFileError::FailedToCreate(ret))
     }
 }

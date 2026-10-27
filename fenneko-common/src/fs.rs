@@ -1,10 +1,9 @@
-use core::fmt;
+use core::{error::Error, fmt};
 
 use winapi::win32::fileapi::FileAttributes;
 
 use crate::{
-    path::Path,
-    raw::fs::{self, Attributes, AttributesError, OpenError},
+    path::{Path, PathBuf}, raw::fs::{self, Attributes, AttributesError, OpenError},
 };
 
 pub type CreateDirError = fs::CreateError;
@@ -56,6 +55,51 @@ pub fn create_dir<T: Into<Path>>(path: T) -> Result<(), CreateDirError> {
     fs::create_dir(path.into().as_os_str().as_slice(), FileAttributes::new())
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum CreateDirsError {
+    PathIsEmpty,
+    FailedToCreateDir(CreateDirError)
+}
+
+impl From<CreateDirError> for CreateDirsError {
+    fn from(value: CreateDirError) -> Self {
+        Self::FailedToCreateDir(value)
+    }
+}
+
+impl fmt::Display for CreateDirsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Error for CreateDirsError {}
+
+/// # Errors
+///
+/// Returns `Err` if the directory could not be created.
+pub fn create_dirs<T: Into<PathBuf>>(path: T) -> Result<(), CreateDirsError> {
+    create_dirs_inner(&path.into())
+}
+
+fn create_dirs_inner(path: &PathBuf) -> Result<(), CreateDirsError> {
+    match create_dir(path.as_path()) {
+        Ok(()) => Ok(()),
+        Err(CreateDirError::PathNotFound) => {
+            let mut parent = path.clone();
+            
+            if parent.pop().is_some() {
+                create_dirs_inner(&parent)?;
+                create_dir(path.as_path())?;
+                Ok(())
+            } else {
+                Err(CreateDirsError::PathIsEmpty)
+            }
+        },
+        Err(e) => Err(e.into()),
+    }
+}
+
 /// # Errors
 ///
 /// Returns `Err` if the directory could not be created.
@@ -89,6 +133,11 @@ mod tests {
     }
 
     #[track_caller]
+    fn remove_dir_all<T: AsRef<std::path::Path>>(path: T) {
+        std::fs::remove_dir_all(path).expect("STD::FS::REMOVE_DIR FAILED");
+    }
+
+    #[track_caller]
     fn remove_file<T: AsRef<std::path::Path>>(path: T) {
         std::fs::remove_file(path).expect("STD::FS::REMOVE_FILE FAILED");
     }
@@ -99,6 +148,14 @@ mod tests {
         create_dir(path).expect("Failed to create dir");
 
         remove_dir(path);
+    }
+
+    #[test]
+    fn create_dirs_test() {
+        let path = "FirstCommonPath/Second/Third/End";
+        create_dirs(path).expect("Failed to create dir");
+
+        remove_dir_all("FirstCommonPath");
     }
 
     #[test]

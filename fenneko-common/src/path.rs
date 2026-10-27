@@ -307,6 +307,14 @@ impl PathBuf {
     }
 }
 
+impl From<&str> for PathBuf {
+    fn from(value: &str) -> Self {
+        Self {
+            inner: OsString::from(value),
+        }
+    }
+}
+
 macro_rules! impl_from_for_pathbuf {
     ($($typ:ty),+ $(,)?) => {
         $(

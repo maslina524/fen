@@ -7,7 +7,7 @@ use winapi::{
 
 pub type Attributes = ItemAttributes;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum AttributesError {
     PathNotFound,
     FileNotFound,

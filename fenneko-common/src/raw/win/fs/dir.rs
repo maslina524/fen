@@ -8,7 +8,7 @@ use winapi::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum CreateError {
     PathNotFound,
     NameNotFound,

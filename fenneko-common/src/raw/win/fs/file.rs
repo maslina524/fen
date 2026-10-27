@@ -16,7 +16,7 @@ pub type AccessWrite = Write;
 pub type AccessRead = Read;
 pub type AccessAll = All;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum OpenError {
     PathNotFound,
     NameNotFound,
@@ -98,7 +98,7 @@ pub fn create_new_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenErro
     open_template(path, FileDispose::CreateNew)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum WriteError {
     InvalidHandle,
     NotEnoughMemory,

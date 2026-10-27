@@ -21,12 +21,13 @@ pub trait CanWrite: FileAccess {}
 
 pub struct Read;
 pub struct Write;
+pub struct Append;
 pub struct All;
 
 impl_tag!(CanRead: Read, All);
-impl_tag!(CanWrite: Write, All);
+impl_tag!(CanWrite: Write, Append, All);
 
-impl_sealed!(Read, Write, All);
+impl_sealed!(Read, Write, Append, All);
 
 impl FileAccess for Read {
     fn raw() -> u32 {
@@ -37,6 +38,12 @@ impl FileAccess for Read {
 impl FileAccess for Write {
     fn raw() -> u32 {
         0x4000_0000
+    }
+}
+
+impl FileAccess for Append {
+    fn raw() -> u32 {
+        0x04
     }
 }
 

@@ -4,16 +4,15 @@ pub use winapi::win32::fileapi::{
     CanRead as AccessCanRead, CanWrite as AccessCanWrite, FileAccess as Access,
 };
 use winapi::{
-    ntstatus::Ntstatus,
-    win32::fileapi::{
-        self, All, CanWrite, CreateFile, CreateOptions, FileAttributes, FileDispose, FileHandle,
-        FileShare, Read, Write, WriteFile,
+    ntstatus::Ntstatus, win32::fileapi::{
+        self, All, Append, CanWrite, CreateFile, CreateOptions, FileAttributes, FileDispose, FileHandle, FileShare, Read, Write, WriteFile,
     },
 };
 
 pub type RawHandle<T> = FileHandle<T>;
-pub type AccessWrite = Write;
 pub type AccessRead = Read;
+pub type AccessWrite = Write;
+pub type AccessAppend = Append;
 pub type AccessAll = All;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -96,6 +95,13 @@ pub fn create_always_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenE
 /// Returns `Err` if the file could not be opened.
 pub fn create_new_file<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
     open_template(path, FileDispose::CreateNew)
+}
+
+/// # Errors
+///
+/// Returns `Err` if the file could not be opened.
+pub fn create_file_if_not_exists<A: Access>(path: &[u16]) -> Result<RawHandle<A>, OpenError> {
+    open_template(path, FileDispose::OpenAlways)
 }
 
 #[derive(Debug, PartialEq, Eq)]

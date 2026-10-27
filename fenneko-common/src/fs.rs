@@ -3,7 +3,7 @@ use core::{error::Error, fmt};
 use winapi::win32::fileapi::FileAttributes;
 
 use crate::{
-    path::{Path, PathBuf}, raw::fs::{self, Attributes, AttributesError, OpenError},
+    path::{Path, PathBuf}, raw::fs::{self, AccessAppend, Attributes, AttributesError, OpenError, WriteError},
 };
 
 pub type CreateDirError = fs::CreateError;
@@ -53,6 +53,13 @@ impl<A: fs::Access> File<A> {
     /// Returns `Err` if the file could not be created.
     pub fn create<T: Into<Path>>(path: T) -> Result<Self, OpenError> {
         fs::create_new_file(path.into().as_os_str().as_slice()).map(Self::from_handle)
+    }
+
+    /// # Errors
+    ///
+    /// Returns `Err` if the file could not be created or opened.
+    pub fn create_or_open<T: Into<Path>>(path: T) -> Result<Self, OpenError> {
+        fs::create_file_if_not_exists(path.into().as_os_str().as_slice()).map(Self::from_handle)
     }
 
     /// # Errors
@@ -154,6 +161,40 @@ pub fn create_dir_with_attrs<T: Into<Path>>(
 /// Returns `Err` if failed to get file attributes
 pub fn metadata<T: Into<Path>>(path: T) -> Result<Attributes, AttributesError> {
     fs::raw_attributes(path.into().as_os_str().as_slice())
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum OpenWriteError {
+    FailedToOpen(OpenError),
+    FailedToWrite(WriteError)
+}
+
+impl From<OpenError> for OpenWriteError {
+    fn from(value: OpenError) -> Self {
+        Self::FailedToOpen(value)
+    }
+}
+
+impl From<WriteError> for OpenWriteError {
+    fn from(value: WriteError) -> Self {
+        Self::FailedToWrite(value)
+    }
+}
+
+impl fmt::Display for OpenWriteError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Error for OpenWriteError {}
+
+/// # Errors
+///
+/// Returns `Err` if failed to open or write to file
+pub fn write<T: Into<Path>>(path: T, s: &str) -> Result<usize, OpenWriteError> {
+    let mut file = File::<AccessAppend>::create_or_open(path)?;
+    file.write_all(s.as_bytes()).map_err(Into::into)
 }
 
 #[cfg(test)]
@@ -262,5 +303,19 @@ mod tests {
 
         assert!(std::fs::exists(path).expect("Failed to check whether the file was created"));
         remove_dir_all("FilePathFirst");
+    }
+
+    #[test]
+    fn create_or_open_file_test() {
+        let path = "CreateOrOpenFile";
+        {
+            write(path, "First String\n").expect("Faile to open or write");
+            write(path, "Second String\n").expect("Faile to open or write");
+            write(path, "Third String\n").expect("Faile to open or write");
+        }
+
+        let file_data = std::fs::read_to_string(path).expect("STD::FS::READ_TO_STRING FAILED");
+        assert_eq!(file_data, "First String\nSecond String\nThird String\n");
+        remove_file(path);
     }
 }

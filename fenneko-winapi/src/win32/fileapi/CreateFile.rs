@@ -172,7 +172,7 @@ fn create_file_inner(
     } else {
         access
     };
-    
+
     let unicode = UnicodeString::from_path(path).ok_or(CreateFileError::UnicodePathAllocate)?;
 
     let mut attrs = OBJECT_ATTRIBUTES {

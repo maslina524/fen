@@ -4,7 +4,7 @@ use winapi::win32::fileapi::FileAttributes;
 
 use crate::{
     path::Path,
-    raw::fs::{self, OpenError},
+    raw::fs::{self, Attributes, AttributesError, OpenError},
 };
 
 pub type CreateDirError = fs::CreateError;
@@ -59,8 +59,18 @@ pub fn create_dir<T: Into<Path>>(path: T) -> Result<(), CreateDirError> {
 /// # Errors
 ///
 /// Returns `Err` if the directory could not be created.
-pub fn create_dir_with_attrs<T: Into<Path>>(path: T, attrs: FileAttributes) -> Result<(), CreateDirError> {
+pub fn create_dir_with_attrs<T: Into<Path>>(
+    path: T,
+    attrs: FileAttributes,
+) -> Result<(), CreateDirError> {
     fs::create_dir(path.into().as_os_str().as_slice(), attrs)
+}
+
+/// # Errors
+///
+/// Returns `Err` if failed to get file attributes
+pub fn metadata<T: Into<Path>>(path: T) -> Result<Attributes, AttributesError> {
+    fs::raw_attributes(path.into().as_os_str().as_slice())
 }
 
 #[cfg(test)]
@@ -68,7 +78,10 @@ mod tests {
     use core::fmt::Write as _;
 
     use super::*;
-    use crate::raw::fs::{AccessWrite, AccessRead};
+    use crate::{
+        fs::metadata,
+        raw::fs::{AccessRead, AccessWrite},
+    };
 
     #[track_caller]
     fn remove_dir<T: AsRef<std::path::Path>>(path: T) {
@@ -127,12 +140,20 @@ mod tests {
     #[test]
     fn create_file_test() {
         let path = "CreatedFile";
-        
+
         {
             File::<AccessRead>::create(path).expect("Failed to create file");
         }
 
         assert!(std::fs::exists(path).expect("Failed to check whether the file was created"));
         remove_file(path);
+    }
+
+    #[test]
+    fn metadata_test() {
+        let _ = metadata("Cargo.toml").expect("Failed to get attrs");
+
+        let attrs = metadata("NotExists");
+        assert!(matches!(attrs, Err(AttributesError::FileNotFound)));
     }
 }

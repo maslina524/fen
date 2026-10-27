@@ -23,7 +23,7 @@ pub enum CreateError {
     QuotaExceeded,
     NoSystemResource,
     BadPrivilege,
-    Unknonw(Ntstatus),
+    Unknown(Ntstatus),
 }
 
 impl fmt::Display for CreateError {
@@ -61,7 +61,7 @@ pub fn create_dir(path: &[u16], attrs: FileAttributes) -> Result<(), CreateError
             0xC000_00C8 => CE::QuotaExceeded,
             0xC000_009A => CE::NoSystemResource,
             0xC000_0061 => CE::BadPrivilege,
-            _ => CE::Unknonw(nt),
+            _ => CE::Unknown(nt),
         }
     }
 

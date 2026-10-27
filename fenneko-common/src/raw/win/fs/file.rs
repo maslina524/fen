@@ -4,7 +4,8 @@ pub use winapi::win32::fileapi::{
     CanRead as AccessCanRead, CanWrite as AccessCanWrite, FileAccess as Access,
 };
 use winapi::{
-    ntstatus::Ntstatus, win32::fileapi::{
+    ntstatus::Ntstatus,
+    win32::fileapi::{
         self, All, CanWrite, CreateFile, CreateOptions, FileAttributes, FileDispose, FileHandle,
         FileShare, Read, Write, WriteFile,
     },
@@ -30,7 +31,7 @@ pub enum OpenError {
     QuotaExceeded,
     NoSystemResource,
     BadPrivilege,
-    Unknonw(Ntstatus),
+    Unknown(Ntstatus),
 }
 
 impl fmt::Display for OpenError {
@@ -57,7 +58,7 @@ fn open_template<A: Access>(path: &[u16], dispose: FileDispose) -> Result<RawHan
 
         #[allow(clippy::match_single_binding)]
         match nt {
-            _ => OE::Unknonw(nt),
+            _ => OE::Unknown(nt),
         }
     }
 
@@ -68,15 +69,12 @@ fn open_template<A: Access>(path: &[u16], dispose: FileDispose) -> Result<RawHan
         FileAttributes::new(),
         CreateOptions::new().non_directory().synchronize(),
     );
-    let err = match ret {
-        Err(e) => match e {
-            fileapi::CreateFileError::UnicodePathAllocate => panic!("Bad path"),
-            fileapi::CreateFileError::FailedToCreate(nt) => nt,
-        },
-        Ok(f) => return Ok(f),
-    };
+    let handle = ret.map_err(|e| match e {
+        fileapi::CreateFileError::UnicodePathAllocate => panic!("Bad path"),
+        fileapi::CreateFileError::FailedToCreate(nt) => map_ntstatus(nt),
+    })?;
 
-    Err(map_ntstatus(err))
+    Ok(handle)
 }
 
 /// # Errors

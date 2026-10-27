@@ -3,3 +3,6 @@ pub use dir::*;
 
 pub mod file;
 pub use file::*;
+
+pub mod meta;
+pub use meta::*;

@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+
 use common::io::{Stderr, Stdout};
 
 use crate::render::Renderable;
@@ -12,7 +13,7 @@ impl Output {
         E: Renderable + 'static,
     {
         Self(match inner {
-            Ok(o)  => Ok(Box::new(o)),
+            Ok(o) => Ok(Box::new(o)),
             Err(e) => Err(Box::new(e)),
         })
     }
@@ -23,12 +24,12 @@ impl Output {
                 let mut stdout = Stdout::new();
                 let _ = o.render_console(&mut stdout);
                 0
-            }
+            },
             Err(e) => {
                 let mut stderr = Stderr::new();
                 let _ = e.render_console(&mut stderr);
                 1
-            }
+            },
         }
     }
 }

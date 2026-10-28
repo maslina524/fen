@@ -36,7 +36,8 @@ pub enum FileAttributesError {
 /// On error returns `FileAttributesError`, which is either a Unicode string
 /// allocation error or a `NtQueryAttributesFile` call error (Ntstatus).
 pub fn GetFileAttributes(path: &[u16]) -> Result<ItemAttributes, FileAttributesError> {
-    let path = UnicodeString::from_path(path).ok_or(FileAttributesError::UnicodePathAllocate)?;
+    let path =
+        UnicodeString::from_path(path).map_err(|_| FileAttributesError::UnicodePathAllocate)?;
     let mut attr = OBJECT_ATTRIBUTES {
         ObjectName: path.as_inner_ptr(),
         ..Default::default()

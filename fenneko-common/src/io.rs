@@ -1,6 +1,17 @@
-use core::fmt;
+use core::{error::Error, fmt};
 
 use crate::raw::io;
+
+#[derive(Debug, Clone, Copy)]
+pub struct StdWriteError;
+
+impl fmt::Display for StdWriteError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Error for StdWriteError {}
 
 pub struct Stdout(io::RawHandle);
 
@@ -10,9 +21,11 @@ impl Stdout {
         Self(io::stdout())
     }
 
-    #[must_use]
-    pub fn write_all(&self, bytes: &[u8]) -> Option<usize> {
-        io::write(&self.0, bytes)
+    /// # Errors
+    ///
+    /// Returns `Err` when it fails to write bytes to Std handle.
+    pub fn write_all(&self, bytes: &[u8]) -> Result<usize, StdWriteError> {
+        io::write(&self.0, bytes).map_err(|_| StdWriteError)
     }
 }
 
@@ -24,10 +37,9 @@ impl Default for Stdout {
 
 impl fmt::Write for Stdout {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        match self.write_all(s.as_bytes()) {
-            Some(_) => Ok(()),
-            None => Err(fmt::Error),
-        }
+        self.write_all(s.as_bytes())
+            .map_err(|_| fmt::Error)
+            .map(|_| ())
     }
 }
 
@@ -39,9 +51,11 @@ impl Stderr {
         Self(io::stderr())
     }
 
-    #[must_use]
-    pub fn write_all(&self, bytes: &[u8]) -> Option<usize> {
-        io::write(&self.0, bytes)
+    /// # Errors
+    ///
+    /// Returns `Err` when it fails to write bytes to Std handle.
+    pub fn write_all(&self, bytes: &[u8]) -> Result<usize, StdWriteError> {
+        io::write(&self.0, bytes).map_err(|_| StdWriteError)
     }
 }
 
@@ -53,7 +67,9 @@ impl Default for Stderr {
 
 impl fmt::Write for Stderr {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.write_all(s.as_bytes()).ok_or(fmt::Error).map(|_| ())
+        self.write_all(s.as_bytes())
+            .map_err(|_| fmt::Error)
+            .map(|_| ())
     }
 }
 

@@ -1,10 +1,24 @@
-use core::marker::PhantomData;
+use core::{error::Error, fmt, marker::PhantomData};
 
 use crate::{
     Handle as _,
     raw::ntdll,
     win32::heapapi::{Alloc, HeapFlags, HeapHandle, HeapPtr},
 };
+
+#[derive(Debug, Clone, Copy)]
+pub enum AllocateError {
+    UsizeOverflow,
+    AllocateHeapFailed,
+}
+
+impl fmt::Display for AllocateError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Error for AllocateError {}
 
 impl HeapFlags<Alloc> {
     #[must_use]
@@ -43,21 +57,26 @@ impl HeapFlags<Alloc> {
     }
 }
 
-#[must_use]
+/// # Errors
+///
+/// Returns `Err` when it fails to allocate butes in heap or usize overflow:
+/// ``count * size_of::<T>()``.
 pub fn HeapAlloc<T: Sized>(
     handle: HeapHandle,
     flags: HeapFlags<Alloc>,
     count: usize,
-) -> Option<HeapPtr<T>> {
-    let bytes = count.checked_mul(size_of::<T>())?;
+) -> Result<HeapPtr<T>, AllocateError> {
+    let bytes = count
+        .checked_mul(size_of::<T>())
+        .ok_or(AllocateError::UsizeOverflow)?;
 
     // SAFETY: `HeapHandle` guarantees a valid handle,
     // `HeapFlags<Alloc>` restricts to valid flags, safe
     let raw = unsafe { ntdll::RtlAllocateHeap(handle.as_raw(), flags.build(), bytes) };
     if raw.is_null() {
-        return None;
+        return Err(AllocateError::AllocateHeapFailed);
     }
 
     // SAFETY: `ptr` was obtained from the heap
-    Some(unsafe { HeapPtr::new(raw.cast()) })
+    Ok(unsafe { HeapPtr::new(raw.cast()) })
 }

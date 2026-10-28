@@ -1,4 +1,8 @@
-use common::{env::Args, fs::{self, CreateDirError, OpenWriteError}, raw::fs::{CreateError, OpenError, WriteError}};
+use common::{
+    env::Args,
+    fs::{self, CreateDirError, OpenWriteError},
+    raw::fs::{CreateError, OpenError, WriteError},
+};
 
 use crate::{actions::Action, render::Renderable};
 
@@ -14,7 +18,7 @@ impl Renderable for InitOut {
 pub enum InitErrorType {
     CreateDir(CreateDirError),
     Open(OpenError),
-    Write(WriteError)
+    Write(WriteError),
 }
 
 macro_rules! impl_from_initerr {
@@ -39,33 +43,37 @@ impl From<OpenWriteError> for InitErrorType {
     fn from(value: OpenWriteError) -> Self {
         match value {
             OpenWriteError::FailedToOpen(e) => Self::Open(e),
-            OpenWriteError::FailedToWrite(e) => Self::Write(e)
+            OpenWriteError::FailedToWrite(e) => Self::Write(e),
         }
     }
 }
 
 pub enum InitError {
     FsError(InitFsError),
-    GitAlreadyInitialized
+    GitAlreadyInitialized,
 }
 
 pub struct InitFsError {
     typ: InitErrorType,
-    object: &'static str
+    object: &'static str,
 }
 
 impl Renderable for InitError {
     fn render_console(&self, f: &mut dyn core::fmt::Write) -> core::fmt::Result {
         let fs_err = match self {
             Self::FsError(e) => e,
-            Self::GitAlreadyInitialized => return writeln!(f, "Git repository already initialized!")
+            Self::GitAlreadyInitialized => {
+                return writeln!(f, "Git repository already initialized!");
+            },
         };
 
         writeln!(f, "Failed to init empty Git repository!")?;
 
         let obj = fs_err.object;
         match fs_err.typ {
-            InitErrorType::CreateDir(e) => writeln!(f, "Creation dir `{obj}` returned an error: {e}"),
+            InitErrorType::CreateDir(e) => {
+                writeln!(f, "Creation dir `{obj}` returned an error: {e}")
+            },
             InitErrorType::Open(e) => writeln!(f, "Opening file `{obj}` returned an error: {e}"),
             InitErrorType::Write(e) => writeln!(f, "Writing file `{obj}` returned an error: {e}"),
         }
@@ -73,7 +81,10 @@ impl Renderable for InitError {
 }
 
 fn map_into_init_err<T: Into<InitErrorType>>(e: T, path: &'static str) -> InitError {
-    InitError::FsError(InitFsError { typ: e.into(), object: path })
+    InitError::FsError(InitFsError {
+        typ: e.into(),
+        object: path,
+    })
 }
 
 pub struct Init;
@@ -85,7 +96,7 @@ impl Action<InitOut, InitError> for Init {
         match ret {
             Err(CreateError::AlreadyExists) => return Err(InitError::GitAlreadyInitialized),
             Err(e) => return Err(map_into_init_err(e, ".git")),
-            Ok(()) => {}
+            Ok(()) => {},
         }
 
         // Head file

@@ -1,21 +1,37 @@
 use alloc::vec::Vec;
-use core::{ptr, slice};
+use core::{error::Error, fmt, ptr, slice};
 
 use crate::raw::{UNICODE_STRING, ntdll};
+
+#[derive(Debug, Clone, Copy)]
+pub struct ConvertDosPathToNtPathError;
+
+impl fmt::Display for ConvertDosPathToNtPathError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Error for ConvertDosPathToNtPathError {}
 
 pub struct UnicodeString(UNICODE_STRING);
 
 impl UnicodeString {
-    // FIXME: Replace `&[u16]` with `OsStr` in the future
-    #[must_use]
-    pub fn from_path(s: &[u16]) -> Option<Self> {
+    /// # Errors
+    ///
+    /// Returns `Err` when it fails to convert DOS path to NT path.
+    pub fn from_path(s: &[u16]) -> Result<Self, ConvertDosPathToNtPathError> {
         let mut buf: Vec<u16> = Vec::with_capacity(s.len() + 1);
         buf.extend_from_slice(s);
         buf.push(0);
 
         let mut unicode_raw = UNICODE_STRING::default();
         let ret = Self::dos_path_to_nt_path(&buf, &mut unicode_raw);
-        if ret { Some(Self(unicode_raw)) } else { None }
+        if ret {
+            Ok(Self(unicode_raw))
+        } else {
+            Err(ConvertDosPathToNtPathError)
+        }
     }
 
     #[must_use]

@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
     "fenneko-cli", "fenneko-common", "fenneko-proc", "fenneko-winapi",
 ]
@@ -11,7 +11,7 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT"
 authors = ["maslina524 <luk.kirill2804@gmail.com>"]
-# repository = "https://github.com/maslina524/fenneko"
+repository = "https://github.com/maslina524/fen"
 
 [profile.release]
 opt-level = "z"
@@ -25,11 +25,25 @@ overflow-checks = false
 
 [profile.dev]
 opt-level = "z"
-lto = true
 debug = true
-codegen-units = 1
 panic = "abort"
 overflow-checks = true
+
+[workspace.lints.rust]
+unused_lifetimes      = "warn"
+trivial_casts         = "warn"
+trivial_numeric_casts = "warn"
+unused_qualifications = "warn"
+rust_2018_idioms      = { level = "warn", priority = -1 }
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links       = "warn"
+private_intra_doc_links      = "warn"
+bare_urls                    = "warn"
+invalid_html_tags            = "warn"
+unescaped_backticks          = "warn"
+redundant_explicit_links     = "warn"
+invalid_codeblock_attributes = "warn"
 
 [workspace.lints.clippy]
 all      = { level = "warn", priority = -1 }
@@ -39,13 +53,18 @@ cargo    = { level = "warn", priority = -1 }
 
 missing_safety_doc         = "warn"
 undocumented_unsafe_blocks = "warn"
-unwrap_used = "warn"
-expect_used = "warn"
+unwrap_used                = "warn"
+expect_used                = "warn"
 
-# There's no point in them, it will make the code cleaner
-cast_lossless            = "allow"
+allow_attributes_without_reason = "warn"
+
 cast_possible_truncation = "allow"
 cast_possible_wrap       = "allow"
 cast_sign_loss           = "allow"
+
+doc_lazy_continuation       = "warn"
+doc_overindented_list_items = "warn"
+doc_link_with_quotes        = "warn"
+empty_docs                  = "warn"
 
 cargo_common_metadata = "allow"

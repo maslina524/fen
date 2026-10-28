@@ -18,8 +18,8 @@ mod actions;
 mod builtins;
 mod entry;
 mod options;
-mod render;
 mod output;
+mod render;
 
 use common::{io::Stdout, prelude::*};
 

@@ -3,7 +3,8 @@ use core::{error::Error, fmt};
 use winapi::win32::fileapi::FileAttributes;
 
 use crate::{
-    path::{Path, PathBuf}, raw::fs::{self, AccessAppend, Attributes, AttributesError, OpenError, WriteError},
+    path::{Path, PathBuf},
+    raw::fs::{self, AccessAppend, Attributes, AttributesError, OpenError, WriteError},
 };
 
 pub type CreateDirError = fs::CreateError;
@@ -11,7 +12,7 @@ pub type CreateDirError = fs::CreateError;
 #[derive(Debug, PartialEq, Eq)]
 pub enum OpenWithDirsError {
     FailedToOpen(OpenError),
-    FailedToCreateDirs(CreateDirsError)
+    FailedToCreateDirs(CreateDirsError),
 }
 
 impl From<CreateDirsError> for OpenWithDirsError {
@@ -104,7 +105,7 @@ pub fn create_dir<T: Into<Path>>(path: T) -> Result<(), CreateDirError> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateDirsError {
     PathIsEmpty,
-    FailedToCreateDir(CreateDirError)
+    FailedToCreateDir(CreateDirError),
 }
 
 impl From<CreateDirError> for CreateDirsError {
@@ -133,7 +134,7 @@ fn create_dirs_inner(path: &PathBuf) -> Result<(), CreateDirsError> {
         Ok(()) => Ok(()),
         Err(CreateDirError::PathNotFound) => {
             let mut parent = path.clone();
-            
+
             if parent.pop().is_some() {
                 create_dirs_inner(&parent)?;
                 create_dir(path.as_path())?;
@@ -166,7 +167,7 @@ pub fn metadata<T: Into<Path>>(path: T) -> Result<Attributes, AttributesError> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum OpenWriteError {
     FailedToOpen(OpenError),
-    FailedToWrite(WriteError)
+    FailedToWrite(WriteError),
 }
 
 impl From<OpenError> for OpenWriteError {
@@ -298,7 +299,8 @@ mod tests {
     fn create_file_with_dirs_test() {
         let path = "FilePathFirst/Second/Third/File";
         {
-            let _ = File::<AccessRead>::create_with_dirs(path).expect("Failed to create file with dirs");
+            let _ = File::<AccessRead>::create_with_dirs(path)
+                .expect("Failed to create file with dirs");
         }
 
         assert!(std::fs::exists(path).expect("Failed to check whether the file was created"));

@@ -1,5 +1,5 @@
 use alloc::boxed::Box;
-use core::fmt;
+use core::{error::Error, fmt};
 
 use crate::{
     os::SmolOsStr,
@@ -8,6 +8,17 @@ use crate::{
         os::{OsStr, OsString},
     },
 };
+
+#[derive(Debug, Clone, Copy)]
+pub struct Utf8Error;
+
+impl fmt::Display for Utf8Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl Error for Utf8Error {}
 
 #[repr(transparent)]
 #[derive(Clone)]
@@ -56,20 +67,22 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
         osstring.into_boxed_str()
     }
 
-    #[must_use]
-    pub fn as_os_str<'o>(&self, buf: &'o mut [u8]) -> Option<&'o OsStr> {
+    /// # Errors
+    ///
+    /// Returns `Err` when it fails to convert ``ConcatPath`` to ``OsStr``.
+    pub fn as_os_str<'o>(&self, buf: &'o mut [u8]) -> Result<&'o OsStr, Utf8Error> {
         let mut pos = 0;
         for item in self.as_slice() {
             let bytes = item.as_bytes();
             let end = pos + bytes.len();
             if end > buf.len() {
-                return None;
+                return Err(Utf8Error);
             }
             buf[pos..end].copy_from_slice(bytes);
             pos = end;
         }
         // SAFETY: we copied valid UTF-16 byte data from valid OsStr's
-        Some(unsafe { OsStr::from_utf16_unchecked(&buf[..pos]) })
+        Ok(unsafe { OsStr::from_utf16_unchecked(&buf[..pos]) })
     }
 
     fn byte_len(&self) -> usize {
@@ -98,7 +111,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
         assert!(self.byte_len() <= SIZE);
 
         let mut buf = [0u8; SIZE];
-        let Some(os_str) = self.as_os_str(&mut buf) else {
+        let Ok(os_str) = self.as_os_str(&mut buf) else {
             unreachable!("Buffer sized using ConcatPath::byte_len")
         };
 

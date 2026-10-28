@@ -33,7 +33,7 @@ pub enum CreateError {
 /// On error returns `CreateDirError`, which is either a Unicode string
 /// allocation error or a `NtCreateFile` call error (Ntstatus).
 pub fn CreateDirectory(path: &[u16], flags: FileAttributes) -> Result<(), CreateError> {
-    let unicode = UnicodeString::from_path(path).ok_or(CreateError::UnicodePathAllocate)?;
+    let unicode = UnicodeString::from_path(path).map_err(|_| CreateError::UnicodePathAllocate)?;
 
     let mut attrs = OBJECT_ATTRIBUTES {
         ObjectName: unicode.as_inner_ptr(),

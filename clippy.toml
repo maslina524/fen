@@ -1,4 +1,5 @@
 msrv = "1.98.1"
+
 cognitive-complexity-threshold = 25
 too-many-arguments-threshold = 7
 type-complexity-threshold = 250
@@ -6,3 +7,5 @@ avoid-breaking-exported-api = false
 
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
+allow-panic-in-tests  = true
+allow-dbg-in-tests    = true

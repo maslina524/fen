@@ -4,8 +4,10 @@ pub use winapi::win32::fileapi::{
     CanRead as AccessCanRead, CanWrite as AccessCanWrite, FileAccess as Access,
 };
 use winapi::{
-    ntstatus::Ntstatus, win32::fileapi::{
-        self, All, Append, CanWrite, CreateFile, CreateOptions, FileAttributes, FileDispose, FileHandle, FileShare, Read, Write, WriteFile,
+    ntstatus::Ntstatus,
+    win32::fileapi::{
+        self, All, Append, CanWrite, CreateFile, CreateOptions, FileAttributes, FileDispose,
+        FileHandle, FileShare, Read, Write, WriteFile,
     },
 };
 

@@ -33,8 +33,8 @@ pub struct Allocator;
 // part of the heap are passed
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        if let Some(ptr) = HeapAlloc(handle(), HeapFlags::alloc(), layout.size()) {
-            return ptr.into_ptr()
+        if let Ok(ptr) = HeapAlloc(handle(), HeapFlags::alloc(), layout.size()) {
+            return ptr.into_ptr();
         }
         panic!("Failed to alloc");
     }
@@ -49,7 +49,7 @@ unsafe impl GlobalAlloc for Allocator {
     }
 
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        if let Some(ptr) = HeapAlloc(handle(), HeapFlags::alloc().zero_memory(), layout.size()) {
+        if let Ok(ptr) = HeapAlloc(handle(), HeapFlags::alloc().zero_memory(), layout.size()) {
             return ptr.into_ptr();
         }
         panic!("Failed to alloc (zeroed)");

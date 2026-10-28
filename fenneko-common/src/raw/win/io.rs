@@ -15,7 +15,10 @@ pub type RawHandle = ConsoleHandle;
 /// since getting stdhandle is always a valid action in a CLI
 #[must_use]
 pub fn stdout() -> RawHandle {
-    GetStdHandle(StdHandle::Stdout).expect("Failed to get std handle (stdout)")
+    if let Some(h) = GetStdHandle(StdHandle::Stdout) {
+        return h
+    }
+    panic!("Failed to get std handle (stdout)");
 }
 
 /// # Panics
@@ -24,7 +27,10 @@ pub fn stdout() -> RawHandle {
 /// since getting stdhandle is always a valid action in a CLI
 #[must_use]
 pub fn stderr() -> RawHandle {
-    GetStdHandle(StdHandle::Stderr).expect("Failed to get std handle (stderr)")
+    if let Some(h) = GetStdHandle(StdHandle::Stderr) {
+        return h
+    }
+    panic!("Failed to get std handle (stderr)");
 }
 
 /// Returns the number of bytes written.

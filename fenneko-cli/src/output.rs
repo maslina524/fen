@@ -21,12 +21,12 @@ impl Output {
         match &self.0 {
             Ok(o) => {
                 let mut stdout = Stdout::new();
-                o.render_console(&mut stdout).unwrap();
+                let _ = o.render_console(&mut stdout);
                 0
             }
             Err(e) => {
                 let mut stderr = Stderr::new();
-                e.render_console(&mut stderr).unwrap();
+                let _ = e.render_console(&mut stderr);
                 1
             }
         }

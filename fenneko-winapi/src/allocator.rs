@@ -33,8 +33,10 @@ pub struct Allocator;
 // part of the heap are passed
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        let ptr = HeapAlloc(handle(), HeapFlags::alloc(), layout.size()).expect("Failed to alloc");
-        ptr.into_ptr()
+        if let Some(ptr) = HeapAlloc(handle(), HeapFlags::alloc(), layout.size()) {
+            return ptr.into_ptr()
+        }
+        panic!("Failed to alloc");
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
@@ -47,9 +49,10 @@ unsafe impl GlobalAlloc for Allocator {
     }
 
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        let ptr = HeapAlloc(handle(), HeapFlags::alloc().zero_memory(), layout.size())
-            .expect("Failed to alloc (zeroed)");
-        ptr.into_ptr()
+        if let Some(ptr) = HeapAlloc(handle(), HeapFlags::alloc().zero_memory(), layout.size()) {
+            return ptr.into_ptr();
+        }
+        panic!("Failed to alloc (zeroed)");
     }
 
     unsafe fn realloc(&self, ptr: *mut u8, _layout: Layout, new_size: usize) -> *mut u8 {
@@ -57,9 +60,10 @@ unsafe impl GlobalAlloc for Allocator {
         // initialized part of the heap; using the stable
         // standard library this shouldn't cause problems
         let heapptr = unsafe { HeapPtr::new(ptr) };
-        let ptr = HeapReAlloc(handle(), HeapFlags::realloc(), heapptr, new_size)
-            .expect("Failed to realloc");
-        ptr.into_ptr()
+        if let Ok(ptr) = HeapReAlloc(handle(), HeapFlags::realloc(), heapptr, new_size) {
+            return ptr.into_ptr();
+        }
+        panic!("Failed to realloc (returned old ptr)");
     }
 }
 

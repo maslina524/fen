@@ -39,6 +39,8 @@ cargo    = { level = "warn", priority = -1 }
 
 missing_safety_doc         = "warn"
 undocumented_unsafe_blocks = "warn"
+unwrap_used = "warn"
+expect_used = "warn"
 
 # There's no point in them, it will make the code cleaner
 cast_lossless            = "allow"

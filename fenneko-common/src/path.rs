@@ -77,34 +77,30 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 
     pub fn with_os_str<R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
-        // SAFETY: Buffer size is chosen using the same length metric
-        // that `as_os_str` uses
-        unsafe {
-            match self.byte_len() {
-                0..=24 => self.with_buf_unchecked::<24, _>(f),
-                25..=32 => self.with_buf_unchecked::<32, _>(f),
-                33..=64 => self.with_buf_unchecked::<64, _>(f),
-                65..=128 => self.with_buf_unchecked::<128, _>(f),
-                129..=256 => self.with_buf_unchecked::<256, _>(f),
-                257..=512 => self.with_buf_unchecked::<512, _>(f),
-                513..=1024 => self.with_buf_unchecked::<1024, _>(f),
-                1025..=2048 => self.with_buf_unchecked::<2048, _>(f),
-                2049..=4096 => self.with_buf_unchecked::<4096, _>(f),
-                4097..=8192 => self.with_buf_unchecked::<8192, _>(f),
-                8193..=16384 => self.with_buf_unchecked::<16384, _>(f),
-                _ => self.with_buf_unchecked::<MAX_PATH_LEN, _>(f),
-            }
+        match self.byte_len() {
+            0..=24 => self.with_buf_unchecked::<24, _>(f),
+            25..=32 => self.with_buf_unchecked::<32, _>(f),
+            33..=64 => self.with_buf_unchecked::<64, _>(f),
+            65..=128 => self.with_buf_unchecked::<128, _>(f),
+            129..=256 => self.with_buf_unchecked::<256, _>(f),
+            257..=512 => self.with_buf_unchecked::<512, _>(f),
+            513..=1024 => self.with_buf_unchecked::<1024, _>(f),
+            1025..=2048 => self.with_buf_unchecked::<2048, _>(f),
+            2049..=4096 => self.with_buf_unchecked::<4096, _>(f),
+            4097..=8192 => self.with_buf_unchecked::<8192, _>(f),
+            8193..=16384 => self.with_buf_unchecked::<16384, _>(f),
+            _ => self.with_buf_unchecked::<MAX_PATH_LEN, _>(f),
         }
     }
 
     #[inline(never)]
-    unsafe fn with_buf_unchecked<const SIZE: usize, R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
+    fn with_buf_unchecked<const SIZE: usize, R>(&self, f: impl FnOnce(&OsStr) -> R) -> R {
         assert!(self.byte_len() <= SIZE);
 
         let mut buf = [0u8; SIZE];
-        let os_str = self
-            .as_os_str(&mut buf)
-            .expect("Buffer sized using ConcatPath::byte_len");
+        let Some(os_str) = self.as_os_str(&mut buf) else {
+            unreachable!("Buffer sized using ConcatPath::byte_len")
+        };
 
         f(os_str)
     }

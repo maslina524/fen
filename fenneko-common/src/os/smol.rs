@@ -118,35 +118,33 @@ fn str_to_arr(s: &OsStr) -> [u16; INLINE_CAP] {
     out
 }
 
-#[allow(clippy::fallible_impl_from)]
 impl From<&OsStr> for SmolOsStr {
     fn from(value: &OsStr) -> Self {
         let repr = if value.is_empty() {
             Repr::Empty
-        } else if value.len() > INLINE_CAP {
-            Repr::Heap(value.into())
-        } else {
+        } else if let Ok(len) = (value.len() as u8).try_into() {
             Repr::Inline {
-                len: (value.len() as u8).try_into().unwrap(),
+                len,
                 data: str_to_arr(value),
             }
+        } else {
+            Repr::Heap(value.into())
         };
         Self(repr)
     }
 }
 
-#[allow(clippy::fallible_impl_from)]
 impl From<OsString> for SmolOsStr {
     fn from(value: OsString) -> Self {
         let repr = if value.is_empty() {
             Repr::Empty
-        } else if value.len() > INLINE_CAP {
-            Repr::Heap(value.into())
-        } else {
+        } else if let Ok(len) = (value.len() as u8).try_into() {
             Repr::Inline {
-                len: (value.len() as u8).try_into().unwrap(),
+                len,
                 data: str_to_arr(value.as_os_str()),
             }
+        } else {
+            Repr::Heap(value.into())
         };
         Self(repr)
     }

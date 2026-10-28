@@ -34,9 +34,9 @@ impl BOOLEAN {
     }
 }
 
-impl Into<bool> for BOOLEAN {
-    fn into(self) -> bool {
-        self.0 > 0
+impl From<BOOLEAN> for bool {
+    fn from(value: BOOLEAN) -> Self {
+        value.0 > 0
     }
 }
 
@@ -51,9 +51,9 @@ impl BOOL {
     }
 }
 
-impl Into<bool> for BOOL {
-    fn into(self) -> bool {
-        self.0 > 0
+impl From<BOOL> for bool {
+    fn from(value: BOOL) -> Self {
+        value.0 > 0
     }
 }
 
@@ -155,7 +155,7 @@ pub struct OBJECT_ATTRIBUTES {
 impl Default for OBJECT_ATTRIBUTES {
     fn default() -> Self {
         Self {
-            Length: mem::size_of::<Self>() as ULONG,
+            Length: size_of::<Self>() as ULONG,
             RootDirectory: ptr::null_mut(),
             ObjectName: ptr::null_mut(),
             Attributes: 0x0000_0040,

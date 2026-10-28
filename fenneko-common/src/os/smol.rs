@@ -86,7 +86,7 @@ impl SmolOsStr {
             Repr::Heap(a) => a.as_bytes(),
             Repr::Inline { len, data } => {
                 let utf16 = &data[..*len as usize];
-                let len = mem::size_of_val(utf16);
+                let len = size_of_val(utf16);
                 let ptr = utf16.as_ptr();
                 // SAFETY: `SmolOsStr` is created from a valid
                 // `OsStr`, safe

@@ -8,7 +8,7 @@ mod panic_impl {
     use common::prelude::*;
 
     #[panic_handler]
-    fn panic(info: &PanicInfo) -> ! {
+    fn panic(info: &PanicInfo<'_>) -> ! {
         println!("{}", info.message());
         loop {}
     }

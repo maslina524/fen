@@ -1,11 +1,9 @@
 #![allow(
-    non_snake_case,
+    clippy::upper_case_acronyms,
     non_upper_case_globals,
     non_camel_case_types,
-    dead_code,
-    clippy::all
+    reason = "Needed for names matching the documentation"
 )]
-#![allow(clippy::unreadable_literal)]
 
 pub mod kernel32;
 pub mod ntdll;

@@ -42,7 +42,6 @@ pub fn raw_attributes(path: &[u16]) -> Result<Attributes, AttributesError> {
     const fn map_ntstatus(nt: Ntstatus) -> AttributesError {
         use crate::raw::fs::AttributesError as AE;
 
-        #[allow(clippy::match_single_binding)]
         match nt.into_inner() {
             0xC000_003A => AE::PathNotFound,
             0xC000_0034 => AE::FileNotFound,

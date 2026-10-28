@@ -1,7 +1,6 @@
 use alloc::{boxed::Box, sync::Arc};
 use core::{
     fmt::{self, Write},
-    mem,
     ops::{Index, Range, RangeFrom, RangeFull, RangeTo},
     ptr, slice,
 };
@@ -45,7 +44,7 @@ impl OsStr {
 
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
-        let len = mem::size_of_val(&self.inner);
+        let len = size_of_val(&self.inner);
         let ptr = self.inner.as_ptr();
         // SAFETY: ptr and length are correct, safe
         unsafe { slice::from_raw_parts(ptr.cast(), len) }
@@ -117,10 +116,10 @@ impl<'c> Chars<'c> {
     }
 
     fn next_point(&mut self) -> Option<u32> {
-        let first = *self.iter.next()? as u32;
+        let first = u32::from(*self.iter.next()?);
 
         if (0xD800..=0xDBFF).contains(&first) {
-            let second = *self.iter.next()? as u32;
+            let second = u32::from(*self.iter.next()?);
             Some(0x10000 + ((first - 0xD800) << 10) + (second - 0xDC00))
         } else {
             Some(first)

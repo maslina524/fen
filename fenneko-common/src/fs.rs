@@ -80,8 +80,11 @@ impl<A: fs::AccessCanWrite> File<A> {
     /// # Errors
     ///
     /// Returns `Err` if it failed to write data to the file.
-    #[allow(clippy::needless_pass_by_ref_mut)]
-    pub fn write_all(&mut self, data: &[u8]) -> Result<usize, fs::WriteError> {
+    #[allow(
+        clippy::needless_pass_by_ref_mut,
+        reason = "Required for logical similarity with fmt::Write"
+    )]
+    pub fn write_all(&mut self, data: &[u8]) -> Result<usize, WriteError> {
         fs::write_file(&self.0, data)
     }
 }

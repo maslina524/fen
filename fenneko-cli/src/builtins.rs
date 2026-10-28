@@ -50,7 +50,7 @@ pub unsafe extern "C" fn memcmp(a: *const c_void, b: *const c_void, n: usize) ->
     for i in 0..n {
         // SAFETY: Moving the pointer within the buffer
         unsafe {
-            let diff = *a.add(i) as i32 - *b.add(i) as i32;
+            let diff = i32::from(*a.add(i)) - i32::from(*b.add(i));
             if diff != 0 {
                 return diff;
             }

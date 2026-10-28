@@ -1,6 +1,11 @@
 #[macro_export]
 macro_rules! handle {
-    ($val:expr) => {{ $val as isize as $crate::raw::HANDLE }};
+    ($val:expr) => {
+        #[allow(trivial_numeric_casts, reason = "Cast isize to isize")]
+        {
+            $val as isize as $crate::raw::HANDLE
+        }
+    };
 }
 
 macro_rules! impl_tag {

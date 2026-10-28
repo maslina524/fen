@@ -57,8 +57,20 @@ fn open_template<A: Access>(path: &[u16], dispose: FileDispose) -> Result<RawHan
     const fn map_ntstatus(nt: Ntstatus) -> OpenError {
         use crate::raw::fs::OpenError as OE;
 
-        #[allow(clippy::match_single_binding)]
-        match nt {
+        match nt.into_inner() {
+            0xC000_003A => OE::PathNotFound,
+            0xC000_0034 => OE::NameNotFound,
+            0xC000_0022 => OE::AccessDenied,
+            0xC000_0056 => OE::AccessPending,
+            0xC000_000D => OE::InvalidParam,
+            0xC000_0033 => OE::InvalidName,
+            0xC000_007F => OE::DiskFull,
+            0xC000_0035 => OE::AlreadyExists,
+            0xC000_0106 => OE::NameTooLong,
+            0xC000_0103 | 0xC000_00BA => OE::NotADir,
+            0xC000_0044 => OE::QuotaExceeded,
+            0xC000_009A | 0xC000_0017 => OE::NoSystemResource,
+            0xC000_0061 => OE::BadPrivilege,
             _ => OE::Unknown(nt),
         }
     }
@@ -142,7 +154,6 @@ pub fn write_file<A: CanWrite>(handle: &FileHandle<A>, buf: &[u8]) -> Result<usi
     const fn map_ntstatus(nt: Ntstatus) -> WriteError {
         use crate::raw::fs::WriteError as WE;
 
-        #[allow(clippy::match_single_binding)]
         match nt.into_inner() {
             0xC000_0008 => WE::InvalidHandle,
             0xC000_009A | 0xC000_0017 => WE::NotEnoughMemory,

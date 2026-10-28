@@ -40,7 +40,7 @@ impl<'cp, const N: usize> ConcatPath<'cp, N> {
     }
 
     #[must_use]
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self, reason = "`&self` is required for a correct API")]
     pub const fn count(&self) -> usize {
         N
     }
@@ -283,7 +283,7 @@ impl PathBuf {
                 return None;
             }
             let ch = units[units.len() - pos];
-            if ch == b'/' as u16 || ch == b'\\' as u16 {
+            if ch == u16::from(b'/') || ch == u16::from(b'\\') {
                 let idx = units.len() - pos;
                 let path = Path::from(&self.inner[idx + 1..]);
                 self.inner.truncate(idx);
@@ -383,7 +383,7 @@ impl<'c> Iterator for Components<'c> {
         let start = self.pos;
         while self.pos < self.inner.len() {
             let ch = self.inner[self.pos];
-            if ch == b'/' as u16 || ch == b'\\' as u16 {
+            if ch == u16::from(b'/') || ch == u16::from(b'\\') {
                 let out = OsStr::from_slice(&self.inner[start..self.pos]);
                 self.pos += 1;
                 return Some(out);

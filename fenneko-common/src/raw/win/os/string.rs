@@ -56,16 +56,16 @@ impl OsString {
 
         let (new_len, ch) = if (0xDC00..=0xDFFF).contains(&last) {
             let high_idx = slice.len().checked_sub(2)?;
-            let high = *slice.get(high_idx)? as u32;
+            let high = u32::from(*slice.get(high_idx)?);
             if !(0xD800..=0xDBFF).contains(&high) {
                 return None;
             }
-            let cp = 0x1_0000 + ((high - 0xD800) << 10) + (last as u32 - 0xDC00);
+            let cp = 0x1_0000 + ((high - 0xD800) << 10) + (u32::from(last) - 0xDC00);
             (high_idx, char::from_u32(cp)?)
         } else if (0xD800..=0xDBFF).contains(&last) {
             return None;
         } else {
-            (slice.len() - 1, char::from_u32(last as u32)?)
+            (slice.len() - 1, char::from_u32(u32::from(last))?)
         };
 
         self.truncate(new_len);
@@ -234,7 +234,7 @@ mod tests {
         let s = OsString::from("abc");
         assert_eq!(
             s.as_os_str(),
-            OsStr::from_slice(&[b'a' as u16, b'b' as u16, b'c' as u16])
+            OsStr::from_slice(&[u16::from(b'a'), u16::from(b'b'), u16::from(b'c')])
         );
         assert_eq!(s.as_slice().len(), 3);
     }
